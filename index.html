@@ -238,6 +238,7 @@
   .modal-actions .btn{ flex:1; }
 
   .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .grid3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
 
   .toast{
     position:fixed;
@@ -290,11 +291,15 @@
 <div class="modal-overlay" id="overlayClient">
   <div class="modal">
     <h2>Nouveau client</h2>
-    <div class="field-row"><label>Nom *</label><input id="fNom" type="text"></div>
-    <div class="field-row"><label>Prénom</label><input id="fPrenom" type="text"></div>
-    <div class="field-row"><label>Téléphone</label><input id="fTel" type="tel"></div>
-    <div class="field-row"><label>Email</label><input id="fEmail" type="email"></div>
-    <div class="field-row"><label>Date de naissance</label><input id="fDateNaissance" type="date"></div>
+    <div class="grid3">
+      <div class="field-row"><label>Nom *</label><input id="fNom" type="text"></div>
+      <div class="field-row"><label>Prénom</label><input id="fPrenom" type="text"></div>
+      <div class="field-row"><label>Naissance</label><input id="fDateNaissance" type="date"></div>
+    </div>
+    <div class="grid2">
+      <div class="field-row"><label>Téléphone</label><input id="fTel" type="tel"></div>
+      <div class="field-row"><label>Email</label><input id="fEmail" type="email"></div>
+    </div>
     <div class="field-row"><label>Adresse</label><input id="fAdresse" type="text"></div>
     <div class="grid2">
       <div class="field-row"><label>Code postal</label><input id="fCodePostal" type="text" inputmode="numeric" maxlength="5"></div>
