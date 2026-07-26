@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Au BouBou de Lulu — Clients</title>
+<style>
+  :root{
+    --cream:#FBF7F0;
+    --ink:#2B2A28;
+    --ink-soft:#6B6560;
+    --sage:#5F8B7A;
+    --sage-dark:#436B5C;
+    --apricot:#E2984B;
+    --blush:#F1DCC9;
+    --line:#E4DACB;
+    --white:#FFFFFF;
+    --radius:16px;
+  }
+
+  *{ box-sizing:border-box; }
+
+  body{
+    margin:0;
+    background:var(--cream);
+    color:var(--ink);
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:60px;
+  }
+
+  header{
+    background:var(--sage);
+    color:var(--white);
+    padding:22px 18px 26px;
+    border-radius:0 0 24px 24px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+
+  header .paw{ width:34px; height:34px; flex-shrink:0; }
+
+  header h1{
+    font-size:1.3rem;
+    margin:0;
+    font-weight:800;
+    letter-spacing:-0.01em;
+  }
+
+  header p{
+    margin:2px 0 0;
+    font-size:0.8rem;
+    opacity:0.85;
+    font-weight:500;
+  }
+
+  main{ max-width:640px; margin:0 auto; padding:16px; }
+
+  .toolbar{
+    display:flex;
+    gap:8px;
+    margin-bottom:14px;
+  }
+
+  .search-wrap{
+    flex:1;
+    position:relative;
+  }
+
+  .search-wrap svg{
+    position:absolute;
+    left:12px;
+    top:50%;
+    transform:translateY(-50%);
+    width:16px;
+    height:16px;
+    opacity:0.45;
+  }
+
+  input, select, textarea{
+    font-family:inherit;
+    font-size:0.95rem;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:11px 12px;
+    background:var(--white);
+    color:var(--ink);
+    width:100%;
+  }
+
+  input:focus, select:focus, textarea:focus{
+    outline:2px solid var(--apricot);
+    outline-offset:1px;
+  }
+
+  #search{ padding-left:34px; }
+
+  .btn{
+    border:none;
+    border-radius:12px;
+    padding:11px 16px;
+    font-size:0.9rem;
+    font-weight:700;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+
+  .btn-primary{ background:var(--apricot); color:var(--white); }
+  .btn-primary:active{ background:#C77E33; }
+
+  .btn-ghost{
+    background:transparent;
+    color:var(--sage-dark);
+    border:1px solid var(--sage);
+  }
+
+  .btn-small{ padding:8px 12px; font-size:0.82rem; }
+
+  .card{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    margin-bottom:10px;
+    overflow:hidden;
+  }
+
+  .card-head{
+    padding:14px 16px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    cursor:pointer;
+    gap:10px;
+  }
+
+  .card-head .name{ font-weight:700; font-size:1rem; }
+  .card-head .meta{ font-size:0.8rem; color:var(--ink-soft); margin-top:2px; }
+
+  .chips{ display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+
+  .chip{
+    font-size:0.72rem;
+    font-weight:700;
+    padding:3px 9px;
+    border-radius:999px;
+    color:var(--white);
+  }
+
+  .chip.chien{ background:var(--sage); }
+  .chip.chat{ background:var(--apricot); }
+  .chip.autre{ background:#9B9284; }
+
+  .caret{ font-size:0.8rem; color:var(--ink-soft); transition:transform .15s; }
+  .card.open .caret{ transform:rotate(180deg); }
+
+  .card-body{
+    display:none;
+    padding:0 16px 16px;
+    border-top:1px solid var(--line);
+  }
+
+  .card.open .card-body{ display:block; }
+
+  .field-row{ margin:10px 0 0; }
+  .field-row label{
+    display:block;
+    font-size:0.72rem;
+    font-weight:700;
+    color:var(--ink-soft);
+    text-transform:uppercase;
+    letter-spacing:0.03em;
+    margin-bottom:4px;
+  }
+
+  .field-row .val{ font-size:0.92rem; }
+
+  .section-title{
+    font-size:0.78rem;
+    font-weight:800;
+    color:var(--sage-dark);
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+    margin:16px 0 8px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+
+  .animal-card{
+    background:var(--blush);
+    border-radius:12px;
+    padding:10px 12px;
+    margin-bottom:8px;
+  }
+
+  .animal-card .a-name{ font-weight:700; font-size:0.92rem; }
+  .animal-card .a-meta{ font-size:0.78rem; color:var(--ink-soft); margin-top:2px; }
+
+  .empty{
+    text-align:center;
+    padding:40px 20px;
+    color:var(--ink-soft);
+  }
+
+  .empty .paw{ width:40px; height:40px; opacity:0.3; margin-bottom:8px; }
+
+  .modal-overlay{
+    display:none;
+    position:fixed; inset:0;
+    background:rgba(43,42,40,0.45);
+    z-index:50;
+    align-items:flex-end;
+  }
+
+  .modal-overlay.show{ display:flex; }
+
+  .modal{
+    background:var(--cream);
+    width:100%;
+    max-height:88vh;
+    overflow-y:auto;
+    border-radius:20px 20px 0 0;
+    padding:18px 18px 24px;
+  }
+
+  .modal h2{
+    font-size:1.05rem;
+    margin:0 0 14px;
+  }
+
+  .modal-actions{
+    display:flex;
+    gap:10px;
+    margin-top:16px;
+  }
+
+  .modal-actions .btn{ flex:1; }
+
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+
+  .toast{
+    position:fixed;
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%);
+    background:var(--ink);
+    color:var(--white);
+    padding:10px 18px;
+    border-radius:999px;
+    font-size:0.85rem;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s;
+    z-index:100;
+  }
+
+  .toast.show{ opacity:1; }
+</style>
+</head>
+<body>
+
+<header>
+  <svg class="paw" viewBox="0 0 64 64" fill="currentColor">
+    <ellipse cx="32" cy="42" rx="15" ry="12"/>
+    <ellipse cx="14" cy="24" rx="7" ry="9"/>
+    <ellipse cx="50" cy="24" rx="7" ry="9"/>
+    <ellipse cx="24" cy="12" rx="6" ry="8"/>
+    <ellipse cx="40" cy="12" rx="6" ry="8"/>
+  </svg>
+  <div>
+    <h1>Au BouBou de Lulu</h1>
+    <p>Fiches clients &amp; compagnons</p>
+  </div>
+</header>
+
+<main>
+  <div class="toolbar">
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="search" type="text" placeholder="Chercher un client...">
+    </div>
+    <button class="btn btn-primary" id="btnNewClient">+ Client</button>
+  </div>
+
+  <div id="clientList"></div>
+</main>
+
+<!-- Modal nouveau client -->
+<div class="modal-overlay" id="overlayClient">
+  <div class="modal">
+    <h2>Nouveau client</h2>
+    <div class="field-row"><label>Nom *</label><input id="fNom" type="text"></div>
+    <div class="field-row"><label>Prénom</label><input id="fPrenom" type="text"></div>
+    <div class="field-row"><label>Téléphone</label><input id="fTel" type="tel"></div>
+    <div class="field-row"><label>Email</label><input id="fEmail" type="email"></div>
+    <div class="field-row"><label>Date de naissance</label><input id="fDateNaissance" type="date"></div>
+    <div class="field-row"><label>Adresse</label><input id="fAdresse" type="text"></div>
+    <div class="grid2">
+      <div class="field-row"><label>Code postal</label><input id="fCodePostal" type="text" inputmode="numeric" maxlength="5"></div>
+      <div class="field-row"><label>Commune</label><input id="fCommune" type="text"></div>
+    </div>
+    <div class="field-row"><label>Notes</label><textarea id="fNotes" rows="2"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btnCancelClient">Annuler</button>
+      <button class="btn btn-primary" id="btnSaveClient">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal nouvel animal -->
+<div class="modal-overlay" id="overlayAnimal">
+  <div class="modal">
+    <h2>Nouvel animal</h2>
+    <input type="hidden" id="aClientId">
+    <div class="field-row"><label>Nom *</label><input id="aNom" type="text"></div>
+    <div class="grid2">
+      <div class="field-row"><label>Espèce *</label><select id="aEspece"></select></div>
+      <div class="field-row"><label>Race</label><select id="aRace"></select></div>
+    </div>
+    <div class="grid2">
+      <div class="field-row"><label>Taille</label><select id="aTaille"></select></div>
+      <div class="field-row"><label>Poids (kg)</label><input id="aPoids" type="number" step="0.1"></div>
+    </div>
+    <div class="field-row"><label>Date de naissance</label><input id="aDateNaissance" type="date"></div>
+    <div class="field-row"><label>Notes santé</label><textarea id="aNotes" rows="2"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btnCancelAnimal">Annuler</button>
+      <button class="btn btn-primary" id="btnSaveAnimal">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbwAub-4OtWsI6pPboX4RafkHg365sdRMKw_732ZnQThlXPr74iRfEt-vwTeSo160BQl/exec';
+
+let clients = [];
+let animauxParClient = {};
+let parametres = [];
+
+// ---------- API helpers ----------
+async function apiGet(action, params){
+  params = params || {};
+  const qs = new URLSearchParams({action, ...params}).toString();
+  const res = await fetch(`${API_URL}?${qs}`);
+  return res.json();
+}
+
+async function apiPost(action, data){
+  const res = await fetch(API_URL, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify({action, data})
+  });
+  return res.json();
+}
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+// ---------- Chargement initial ----------
+async function loadAll(){
+  const [c, a, p] = await Promise.all([
+    apiGet('getClients'),
+    apiGet('getAnimaux'),
+    apiGet('getParametres')
+  ]);
+
+  clients = c || [];
+  parametres = p || [];
+
+  animauxParClient = {};
+  (a || []).forEach(an => {
+    if (!animauxParClient[an.ID_Client]) animauxParClient[an.ID_Client] = [];
+    animauxParClient[an.ID_Client].push(an);
+  });
+
+  renderClientList(clients);
+}
+
+function especeChipClass(esp){
+  if (esp === 'Chien') return 'chien';
+  if (esp === 'Chat') return 'chat';
+  return 'autre';
+}
+
+// ---------- Rendu liste clients ----------
+function renderClientList(list){
+  const container = document.getElementById('clientList');
+
+  if (!list.length){
+    container.innerHTML = `
+      <div class="empty">
+        <svg class="paw" viewBox="0 0 64 64" fill="currentColor" style="display:block;margin:0 auto 8px">
+          <ellipse cx="32" cy="42" rx="15" ry="12"/><ellipse cx="14" cy="24" rx="7" ry="9"/>
+          <ellipse cx="50" cy="24" rx="7" ry="9"/><ellipse cx="24" cy="12" rx="6" ry="8"/><ellipse cx="40" cy="12" rx="6" ry="8"/>
+        </svg>
+        Aucun client pour le moment.<br>Ajoute le premier avec le bouton "+ Client".
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = list.map(cl => {
+    const animaux = animauxParClient[cl.ID_Client] || [];
+    const chips = animaux.map(a => `<span class="chip ${especeChipClass(a.Espece)}">${a.Nom_Animal}</span>`).join('');
+
+    return `
+    <div class="card" id="card-${cl.ID_Client}">
+      <div class="card-head" onclick="toggleCard('${cl.ID_Client}')">
+        <div>
+          <div class="name">${cl.Prenom || ''} ${cl.Nom || ''}</div>
+          <div class="meta">${cl.Telephone || 'Pas de téléphone'}</div>
+          <div class="chips">${chips || '<span class="meta">Aucun animal</span>'}</div>
+        </div>
+        <div class="caret">▾</div>
+      </div>
+      <div class="card-body" id="body-${cl.ID_Client}"></div>
+    </div>`;
+  }).join('');
+}
+
+function toggleCard(idClient){
+  const card = document.getElementById(`card-${idClient}`);
+  const wasOpen = card.classList.contains('open');
+
+  document.querySelectorAll('.card.open').forEach(c => c.classList.remove('open'));
+
+  if (!wasOpen){
+    card.classList.add('open');
+    renderCardBody(idClient);
+  }
+}
+
+function renderCardBody(idClient){
+  const cl = clients.find(c => c.ID_Client === idClient);
+  const animaux = animauxParClient[idClient] || [];
+  const body = document.getElementById(`body-${idClient}`);
+
+  const adresseComplete = [cl.Adresse, [cl.Code_Postal, cl.Commune].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+
+  body.innerHTML = `
+    ${cl.Email ? `<div class="field-row"><label>Email</label><div class="val">${cl.Email}</div></div>` : ''}
+    ${cl.Date_Naissance ? `<div class="field-row"><label>Date de naissance</label><div class="val">${cl.Date_Naissance}</div></div>` : ''}
+    ${adresseComplete ? `<div class="field-row"><label>Adresse</label><div class="val">${adresseComplete}</div></div>` : ''}
+    ${cl.Notes ? `<div class="field-row"><label>Notes</label><div class="val">${cl.Notes}</div></div>` : ''}
+
+    <div class="section-title">
+      <span>Animaux</span>
+      <button class="btn btn-ghost btn-small" onclick="openAnimalModal('${idClient}')">+ Animal</button>
+    </div>
+
+    ${animaux.length ? animaux.map(a => `
+      <div class="animal-card">
+        <div class="a-name">${a.Nom_Animal} <span class="chip ${especeChipClass(a.Espece)}">${a.Espece}</span></div>
+        <div class="a-meta">${[a.Race, a.Taille, a.Poids ? a.Poids + ' kg' : ''].filter(Boolean).join(' · ')}</div>
+        ${a.Notes_Sante ? `<div class="a-meta">⚕ ${a.Notes_Sante}</div>` : ''}
+      </div>
+    `).join('') : '<div class="meta" style="color:var(--ink-soft);font-size:0.85rem;">Aucun animal enregistré.</div>'}
+  `;
+}
+
+// ---------- Modal client ----------
+function openClientModal(){
+  ['fNom','fPrenom','fTel','fEmail','fDateNaissance','fAdresse','fCodePostal','fCommune','fNotes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('overlayClient').classList.add('show');
+}
+function closeClientModal(){
+  document.getElementById('overlayClient').classList.remove('show');
+}
+
+async function saveClient(){
+  const Nom = document.getElementById('fNom').value.trim();
+  if (!Nom){ toast('Le nom est obligatoire'); return; }
+
+  const data = {
+    Nom,
+    Prenom: document.getElementById('fPrenom').value.trim(),
+    Telephone: document.getElementById('fTel').value.trim(),
+    Email: document.getElementById('fEmail').value.trim(),
+    Date_Naissance: document.getElementById('fDateNaissance').value,
+    Adresse: document.getElementById('fAdresse').value.trim(),
+    Code_Postal: document.getElementById('fCodePostal').value.trim(),
+    Commune: document.getElementById('fCommune').value.trim(),
+    Notes: document.getElementById('fNotes').value.trim()
+  };
+
+  toast('Enregistrement...');
+  const res = await apiPost('addClient', data);
+  if (res.error){ toast('Erreur : ' + res.error); return; }
+
+  closeClientModal();
+  toast('Client ajouté ✓');
+  await loadAll();
+}
+
+// ---------- Modal animal ----------
+function fillSelect(select, values, placeholder){
+  select.innerHTML = (placeholder ? `<option value="">${placeholder}</option>` : '') +
+    values.map(v => `<option value="${v}">${v}</option>`).join('');
+}
+
+function refreshRaceOptions(){
+  const espece = document.getElementById('aEspece').value;
+  const races = parametres
+    .filter(p => p.Type === 'Race' && (!espece || p.Parent === espece))
+    .map(p => p.Valeur);
+  fillSelect(document.getElementById('aRace'), races, 'Sélectionner');
+}
+
+function openAnimalModal(idClient){
+  document.getElementById('aClientId').value = idClient;
+  ['aNom','aPoids','aDateNaissance','aNotes'].forEach(id => document.getElementById(id).value = '');
+
+  const especes = parametres.filter(p => p.Type === 'Espece').map(p => p.Valeur);
+  const tailles = parametres.filter(p => p.Type === 'Taille').map(p => p.Valeur);
+
+  fillSelect(document.getElementById('aEspece'), especes, 'Sélectionner');
+  fillSelect(document.getElementById('aTaille'), tailles, 'Sélectionner');
+  refreshRaceOptions();
+
+  document.getElementById('overlayAnimal').classList.add('show');
+}
+function closeAnimalModal(){
+  document.getElementById('overlayAnimal').classList.remove('show');
+}
+
+async function saveAnimal(){
+  const Nom_Animal = document.getElementById('aNom').value.trim();
+  const Espece = document.getElementById('aEspece').value;
+  if (!Nom_Animal || !Espece){ toast('Nom et espèce obligatoires'); return; }
+
+  const data = {
+    ID_Client: document.getElementById('aClientId').value,
+    Nom_Animal,
+    Espece,
+    Race: document.getElementById('aRace').value,
+    Taille: document.getElementById('aTaille').value,
+    Poids: document.getElementById('aPoids').value,
+    Date_Naissance: document.getElementById('aDateNaissance').value,
+    Notes_Sante: document.getElementById('aNotes').value.trim()
+  };
+
+  toast('Enregistrement...');
+  const res = await apiPost('addAnimal', data);
+  if (res.error){ toast('Erreur : ' + res.error); return; }
+
+  closeAnimalModal();
+  toast('Animal ajouté ✓');
+  const idClient = data.ID_Client;
+  await loadAll();
+  document.getElementById(`card-${idClient}`).classList.add('open');
+  renderCardBody(idClient);
+}
+
+// ---------- Recherche ----------
+document.getElementById('search').addEventListener('input', (e) => {
+  const q = e.target.value.trim().toLowerCase();
+  if (!q){ renderClientList(clients); return; }
+  const filtered = clients.filter(c =>
+    (c.Nom || '').toLowerCase().includes(q) ||
+    (c.Prenom || '').toLowerCase().includes(q) ||
+    (c.Telephone || '').toLowerCase().includes(q) ||
+    (c.Commune || '').toLowerCase().includes(q)
+  );
+  renderClientList(filtered);
+});
+
+// ---------- Events ----------
+document.getElementById('btnNewClient').addEventListener('click', openClientModal);
+document.getElementById('btnCancelClient').addEventListener('click', closeClientModal);
+document.getElementById('btnSaveClient').addEventListener('click', saveClient);
+document.getElementById('btnCancelAnimal').addEventListener('click', closeAnimalModal);
+document.getElementById('btnSaveAnimal').addEventListener('click', saveAnimal);
+document.getElementById('aEspece').addEventListener('change', refreshRaceOptions);
+
+loadAll();
+</script>
+</body>
+</html>
