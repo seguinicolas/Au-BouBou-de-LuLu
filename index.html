@@ -389,20 +389,21 @@
 
   <div id="viewParametres" style="display:none">
     <div class="param-tabs" id="paramTabs"></div>
-    <div id="paramList"></div>
 
-    <div class="card" style="padding:14px 16px;margin-top:14px;">
+    <div class="card" style="padding:14px 16px;margin-bottom:14px;">
       <div class="section-title"><span>Ajouter une valeur</span></div>
       <div class="field-row" id="paramParentRow" style="display:none">
         <label>Espèce</label>
         <select id="paramParentSelect"></select>
       </div>
-      <div class="field-row">
-        <label>Valeur</label>
-        <input id="paramValueInput" type="text">
+      <div class="grid2" id="paramValuePriceRow">
+        <div class="field-row"><label>Valeur</label><input id="paramValueInput" type="text"></div>
+        <div class="field-row" id="paramPriceRow" style="display:none"><label>Prix (€)</label><input id="paramPriceInput" type="number" step="0.5" min="0"></div>
       </div>
       <button class="btn btn-primary" style="width:100%;margin-top:12px;" id="btnAddParam">+ Ajouter</button>
     </div>
+
+    <div id="paramList"></div>
   </div>
 </main>
 
@@ -739,8 +740,8 @@ function showView(view){
 
 // ---------- Paramètres (races, prestations...) ----------
 const TYPE_CONFIG = {
-  Race: { parentType: 'Espece' },
-  Prestation: { parentType: null }
+  Race: { parentType: 'Espece', priceField: false },
+  Prestation: { parentType: null, priceField: true }
 };
 let currentParamType = 'Race';
 
@@ -758,11 +759,13 @@ function selectParamType(type){
 
   const cfg = TYPE_CONFIG[type];
   document.getElementById('paramParentRow').style.display = cfg.parentType ? '' : 'none';
+  document.getElementById('paramPriceRow').style.display = cfg.priceField ? '' : 'none';
   if (cfg.parentType){
     const options = parametres.filter(p => p.Type === cfg.parentType).map(p => p.Valeur);
     fillSelect(document.getElementById('paramParentSelect'), options, 'Sélectionner');
   }
   document.getElementById('paramValueInput').value = '';
+  document.getElementById('paramPriceInput').value = '';
 }
 
 function renderParamList(){
@@ -777,7 +780,7 @@ function renderParamList(){
   list.innerHTML = items.map(p => `
     <div class="param-item">
       <div>
-        <div class="val">${p.Valeur}</div>
+        <div class="val">${p.Valeur}${p.Prix ? ` — ${Number(p.Prix).toFixed(2)} €` : ''}</div>
         ${p.Parent ? `<div class="sub">${p.Parent}</div>` : ''}
       </div>
       <button class="btn-delete" onclick="deleteParamItem('${p.ID}')">✕</button>
@@ -796,12 +799,14 @@ async function addParamItem(){
   const cfg = TYPE_CONFIG[currentParamType];
   const parent = cfg.parentType ? document.getElementById('paramParentSelect').value : '';
   if (cfg.parentType && !parent){ toast('Choisis ' + cfg.parentType); return; }
+  const prix = cfg.priceField ? document.getElementById('paramPriceInput').value : '';
 
   toast('Ajout...');
-  const res = await apiPost('addParametre', { Type: currentParamType, Valeur: valeur, Parent: parent });
+  const res = await apiPost('addParametre', { Type: currentParamType, Valeur: valeur, Parent: parent, Prix: prix });
   if (res.error){ toast('Erreur : ' + res.error); return; }
 
   document.getElementById('paramValueInput').value = '';
+  document.getElementById('paramPriceInput').value = '';
   toast('Ajouté ✓');
   await reloadParametres();
   renderParamList();
