@@ -294,7 +294,12 @@
     <div class="field-row"><label>Prénom</label><input id="fPrenom" type="text"></div>
     <div class="field-row"><label>Téléphone</label><input id="fTel" type="tel"></div>
     <div class="field-row"><label>Email</label><input id="fEmail" type="email"></div>
+    <div class="field-row"><label>Date de naissance</label><input id="fDateNaissance" type="date"></div>
     <div class="field-row"><label>Adresse</label><input id="fAdresse" type="text"></div>
+    <div class="grid2">
+      <div class="field-row"><label>Code postal</label><input id="fCodePostal" type="text" inputmode="numeric" maxlength="5"></div>
+      <div class="field-row"><label>Commune</label><input id="fCommune" type="text"></div>
+    </div>
     <div class="field-row"><label>Notes</label><textarea id="fNotes" rows="2"></textarea></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" id="btnCancelClient">Annuler</button>
@@ -437,9 +442,12 @@ function renderCardBody(idClient){
   const animaux = animauxParClient[idClient] || [];
   const body = document.getElementById(`body-${idClient}`);
 
+  const adresseComplete = [cl.Adresse, [cl.Code_Postal, cl.Commune].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+
   body.innerHTML = `
     ${cl.Email ? `<div class="field-row"><label>Email</label><div class="val">${cl.Email}</div></div>` : ''}
-    ${cl.Adresse ? `<div class="field-row"><label>Adresse</label><div class="val">${cl.Adresse}</div></div>` : ''}
+    ${cl.Date_Naissance ? `<div class="field-row"><label>Date de naissance</label><div class="val">${cl.Date_Naissance}</div></div>` : ''}
+    ${adresseComplete ? `<div class="field-row"><label>Adresse</label><div class="val">${adresseComplete}</div></div>` : ''}
     ${cl.Notes ? `<div class="field-row"><label>Notes</label><div class="val">${cl.Notes}</div></div>` : ''}
 
     <div class="section-title">
@@ -459,7 +467,7 @@ function renderCardBody(idClient){
 
 // ---------- Modal client ----------
 function openClientModal(){
-  ['fNom','fPrenom','fTel','fEmail','fAdresse','fNotes'].forEach(id => document.getElementById(id).value = '');
+  ['fNom','fPrenom','fTel','fEmail','fDateNaissance','fAdresse','fCodePostal','fCommune','fNotes'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('overlayClient').classList.add('show');
 }
 function closeClientModal(){
@@ -475,7 +483,10 @@ async function saveClient(){
     Prenom: document.getElementById('fPrenom').value.trim(),
     Telephone: document.getElementById('fTel').value.trim(),
     Email: document.getElementById('fEmail').value.trim(),
+    Date_Naissance: document.getElementById('fDateNaissance').value,
     Adresse: document.getElementById('fAdresse').value.trim(),
+    Code_Postal: document.getElementById('fCodePostal').value.trim(),
+    Commune: document.getElementById('fCommune').value.trim(),
     Notes: document.getElementById('fNotes').value.trim()
   };
 
@@ -554,7 +565,8 @@ document.getElementById('search').addEventListener('input', (e) => {
   const filtered = clients.filter(c =>
     (c.Nom || '').toLowerCase().includes(q) ||
     (c.Prenom || '').toLowerCase().includes(q) ||
-    (c.Telephone || '').toLowerCase().includes(q)
+    (c.Telephone || '').toLowerCase().includes(q) ||
+    (c.Commune || '').toLowerCase().includes(q)
   );
   renderClientList(filtered);
 });
