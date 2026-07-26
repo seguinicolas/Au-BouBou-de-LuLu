@@ -257,6 +257,93 @@
   }
 
   .toast.show{ opacity:1; }
+
+  .hamburger-btn{
+    background:none;
+    border:none;
+    color:var(--white);
+    width:36px;
+    height:36px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    margin-left:auto;
+    flex-shrink:0;
+  }
+  .hamburger-btn svg{ width:24px; height:24px; }
+
+  .nav-overlay{
+    display:none;
+    position:fixed; inset:0;
+    background:rgba(43,42,40,0.45);
+    z-index:60;
+  }
+  .nav-overlay.show{ display:block; }
+
+  .nav-drawer{
+    position:fixed;
+    top:0; left:0; bottom:0;
+    width:75%;
+    max-width:280px;
+    background:var(--white);
+    padding:22px 16px;
+    transform:translateX(-100%);
+    transition:transform .2s;
+  }
+  .nav-overlay.show .nav-drawer{ transform:translateX(0); }
+
+  .nav-title{ font-weight:800; font-size:1.05rem; margin-bottom:16px; color:var(--ink-soft); text-transform:uppercase; font-size:0.78rem; letter-spacing:0.04em; }
+
+  .nav-item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:12px 10px;
+    border-radius:10px;
+    font-weight:700;
+    font-size:0.95rem;
+    color:var(--ink);
+    cursor:pointer;
+    margin-bottom:4px;
+  }
+  .nav-item.active{ background:var(--blush); color:var(--sage-dark); }
+
+  .param-tabs{ display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
+  .tab-btn{
+    padding:8px 16px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    background:var(--white);
+    font-weight:700;
+    font-size:0.85rem;
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .tab-btn.active{ background:var(--sage); color:var(--white); border-color:var(--sage); }
+
+  .param-item{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:10px 14px;
+    margin-bottom:8px;
+  }
+  .param-item .val{ font-weight:700; font-size:0.92rem; }
+  .param-item .sub{ font-size:0.78rem; color:var(--ink-soft); margin-top:2px; }
+
+  .btn-delete{
+    background:none;
+    border:none;
+    color:#B0453B;
+    font-size:1.1rem;
+    cursor:pointer;
+    padding:4px 8px;
+    line-height:1;
+  }
 </style>
 </head>
 <body>
@@ -273,18 +360,49 @@
     <h1>Au BouBou de Lulu</h1>
     <p>Fiches clients &amp; compagnons</p>
   </div>
+  <button class="hamburger-btn" id="btnMenu" aria-label="Menu">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
 </header>
 
+<div class="nav-overlay" id="navOverlay">
+  <div class="nav-drawer">
+    <div class="nav-title">Menu</div>
+    <div class="nav-item active" id="navClients" onclick="showView('clients')">🐾 Clients</div>
+    <div class="nav-item" id="navParametres" onclick="showView('parametres')">⚙️ Paramètres</div>
+  </div>
+</div>
+
 <main>
-  <div class="toolbar">
-    <div class="search-wrap">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input id="search" type="text" placeholder="Chercher un client...">
+  <div id="viewClients">
+    <div class="toolbar">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="search" type="text" placeholder="Chercher un client...">
+      </div>
+      <button class="btn btn-primary" id="btnNewClient">+ Client</button>
     </div>
-    <button class="btn btn-primary" id="btnNewClient">+ Client</button>
+
+    <div id="clientList"></div>
   </div>
 
-  <div id="clientList"></div>
+  <div id="viewParametres" style="display:none">
+    <div class="param-tabs" id="paramTabs"></div>
+    <div id="paramList"></div>
+
+    <div class="card" style="padding:14px 16px;margin-top:14px;">
+      <div class="section-title"><span>Ajouter une valeur</span></div>
+      <div class="field-row" id="paramParentRow" style="display:none">
+        <label>Espèce</label>
+        <select id="paramParentSelect"></select>
+      </div>
+      <div class="field-row">
+        <label>Valeur</label>
+        <input id="paramValueInput" type="text">
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-top:12px;" id="btnAddParam">+ Ajouter</button>
+    </div>
+  </div>
 </main>
 
 <!-- Modal nouveau client -->
@@ -576,7 +694,109 @@ document.getElementById('search').addEventListener('input', (e) => {
   renderClientList(filtered);
 });
 
+// ---------- Navigation menu ----------
+function openNav(){ document.getElementById('navOverlay').classList.add('show'); }
+function closeNav(){ document.getElementById('navOverlay').classList.remove('show'); }
+
+function showView(view){
+  document.getElementById('viewClients').style.display = view === 'clients' ? '' : 'none';
+  document.getElementById('viewParametres').style.display = view === 'parametres' ? '' : 'none';
+  document.getElementById('navClients').classList.toggle('active', view === 'clients');
+  document.getElementById('navParametres').classList.toggle('active', view === 'parametres');
+  closeNav();
+
+  if (view === 'parametres'){
+    renderParamTabs();
+    selectParamType(currentParamType);
+  }
+}
+
+// ---------- Paramètres (races, prestations...) ----------
+const TYPE_CONFIG = {
+  Race: { parentType: 'Espece' },
+  Prestation: { parentType: null }
+};
+let currentParamType = 'Race';
+
+function renderParamTabs(){
+  const wrap = document.getElementById('paramTabs');
+  wrap.innerHTML = Object.keys(TYPE_CONFIG).map(t =>
+    `<button class="tab-btn ${t === currentParamType ? 'active' : ''}" onclick="selectParamType('${t}')">${t}</button>`
+  ).join('');
+}
+
+function selectParamType(type){
+  currentParamType = type;
+  renderParamTabs();
+  renderParamList();
+
+  const cfg = TYPE_CONFIG[type];
+  document.getElementById('paramParentRow').style.display = cfg.parentType ? '' : 'none';
+  if (cfg.parentType){
+    const options = parametres.filter(p => p.Type === cfg.parentType).map(p => p.Valeur);
+    fillSelect(document.getElementById('paramParentSelect'), options, 'Sélectionner');
+  }
+  document.getElementById('paramValueInput').value = '';
+}
+
+function renderParamList(){
+  const items = parametres.filter(p => p.Type === currentParamType);
+  const list = document.getElementById('paramList');
+
+  if (!items.length){
+    list.innerHTML = '<div class="meta" style="color:var(--ink-soft);font-size:0.85rem;padding:8px 0;">Aucune valeur pour l\'instant.</div>';
+    return;
+  }
+
+  list.innerHTML = items.map(p => `
+    <div class="param-item">
+      <div>
+        <div class="val">${p.Valeur}</div>
+        ${p.Parent ? `<div class="sub">${p.Parent}</div>` : ''}
+      </div>
+      <button class="btn-delete" onclick="deleteParamItem('${p.ID}')">✕</button>
+    </div>
+  `).join('');
+}
+
+async function reloadParametres(){
+  parametres = await apiGet('getParametres');
+}
+
+async function addParamItem(){
+  const valeur = document.getElementById('paramValueInput').value.trim();
+  if (!valeur){ toast('Entre une valeur'); return; }
+
+  const cfg = TYPE_CONFIG[currentParamType];
+  const parent = cfg.parentType ? document.getElementById('paramParentSelect').value : '';
+  if (cfg.parentType && !parent){ toast('Choisis ' + cfg.parentType); return; }
+
+  toast('Ajout...');
+  const res = await apiPost('addParametre', { Type: currentParamType, Valeur: valeur, Parent: parent });
+  if (res.error){ toast('Erreur : ' + res.error); return; }
+
+  document.getElementById('paramValueInput').value = '';
+  toast('Ajouté ✓');
+  await reloadParametres();
+  renderParamList();
+}
+
+async function deleteParamItem(id){
+  if (!confirm('Supprimer cette valeur ?')) return;
+
+  toast('Suppression...');
+  const res = await apiPost('deleteParametre', { ID: id });
+  if (res.error){ toast('Erreur : ' + res.error); return; }
+
+  toast('Supprimé ✓');
+  await reloadParametres();
+  renderParamList();
+}
+
 // ---------- Events ----------
+document.getElementById('btnMenu').addEventListener('click', openNav);
+document.getElementById('navOverlay').addEventListener('click', (e) => { if (e.target.id === 'navOverlay') closeNav(); });
+document.getElementById('btnAddParam').addEventListener('click', addParamItem);
 document.getElementById('btnNewClient').addEventListener('click', openClientModal);
 document.getElementById('btnCancelClient').addEventListener('click', closeClientModal);
 document.getElementById('btnSaveClient').addEventListener('click', saveClient);
