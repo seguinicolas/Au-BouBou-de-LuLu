@@ -239,6 +239,7 @@
 
   .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .grid3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+  .grid-adresse{ display:grid; grid-template-columns:2fr 1fr 1.3fr; gap:8px; }
 
   .toast{
     position:fixed;
@@ -418,8 +419,8 @@
       <div class="field-row"><label>Téléphone</label><input id="fTel" type="tel"></div>
       <div class="field-row"><label>Email</label><input id="fEmail" type="email"></div>
     </div>
-    <div class="field-row"><label>Adresse</label><input id="fAdresse" type="text"></div>
-    <div class="grid2">
+    <div class="grid-adresse">
+      <div class="field-row"><label>Adresse</label><input id="fAdresse" type="text"></div>
       <div class="field-row"><label>Code postal</label><input id="fCodePostal" type="text" inputmode="numeric" maxlength="5"></div>
       <div class="field-row"><label>Commune</label><input id="fCommune" type="text"></div>
     </div>
@@ -513,6 +514,13 @@ function especeChipClass(esp){
   return 'autre';
 }
 
+function formatDateFR(dateStr){
+  if (!dateStr) return '';
+  const match = String(dateStr).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) return `${match[3]}/${match[2]}/${match[1]}`;
+  return dateStr;
+}
+
 // ---------- Rendu liste clients ----------
 function renderClientList(list){
   const container = document.getElementById('clientList');
@@ -569,7 +577,7 @@ function renderCardBody(idClient){
 
   body.innerHTML = `
     ${cl.Email ? `<div class="field-row"><label>Email</label><div class="val">${cl.Email}</div></div>` : ''}
-    ${cl.Date_Naissance ? `<div class="field-row"><label>Date de naissance</label><div class="val">${cl.Date_Naissance}</div></div>` : ''}
+    ${cl.Date_Naissance ? `<div class="field-row"><label>Date de naissance</label><div class="val">${formatDateFR(cl.Date_Naissance)}</div></div>` : ''}
     ${adresseComplete ? `<div class="field-row"><label>Adresse</label><div class="val">${adresseComplete}</div></div>` : ''}
     ${cl.Notes ? `<div class="field-row"><label>Notes</label><div class="val">${cl.Notes}</div></div>` : ''}
 
@@ -580,9 +588,14 @@ function renderCardBody(idClient){
 
     ${animaux.length ? animaux.map(a => `
       <div class="animal-card">
-        <div class="a-name">${a.Nom_Animal} <span class="chip ${especeChipClass(a.Espece)}">${a.Espece}</span></div>
-        <div class="a-meta">${[a.Race, a.Taille, a.Poids ? a.Poids + ' kg' : ''].filter(Boolean).join(' · ')}</div>
-        ${a.Notes_Sante ? `<div class="a-meta">⚕ ${a.Notes_Sante}</div>` : ''}
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;">
+          <div>
+            <div class="a-name">${a.Nom_Animal} <span class="chip ${especeChipClass(a.Espece)}">${a.Espece}</span></div>
+            <div class="a-meta">${[a.Race, a.Taille, a.Poids ? a.Poids + ' kg' : ''].filter(Boolean).join(' · ')}</div>
+            ${a.Notes_Sante ? `<div class="a-meta">⚕ ${a.Notes_Sante}</div>` : ''}
+          </div>
+          <button class="btn-delete" onclick="deleteAnimalItem('${a.ID_Animal}', '${idClient}')">✕</button>
+        </div>
       </div>
     `).join('') : '<div class="meta" style="color:var(--ink-soft);font-size:0.85rem;">Aucun animal enregistré.</div>'}
   `;
@@ -676,6 +689,19 @@ async function saveAnimal(){
   closeAnimalModal();
   toast('Animal ajouté ✓');
   const idClient = data.ID_Client;
+  await loadAll();
+  document.getElementById(`card-${idClient}`).classList.add('open');
+  renderCardBody(idClient);
+}
+
+async function deleteAnimalItem(idAnimal, idClient){
+  if (!confirm('Supprimer cet animal ?')) return;
+
+  toast('Suppression...');
+  const res = await apiPost('deleteAnimal', { ID_Animal: idAnimal });
+  if (res.error){ toast('Erreur : ' + res.error); return; }
+
+  toast('Supprimé ✓');
   await loadAll();
   document.getElementById(`card-${idClient}`).classList.add('open');
   renderCardBody(idClient);
