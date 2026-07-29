@@ -443,6 +443,14 @@
     cursor:pointer;
   }
   .caisse-client-card .name{ font-weight:700; font-size:0.92rem; }
+  .caisse-client-card.selected{ border-color:var(--sage); background:var(--blush); }
+
+  .caisse-client-indicator{
+    font-size:0.85rem;
+    font-weight:700;
+    color:var(--sage-dark);
+    margin-bottom:10px;
+  }
 
   .caisse-total-bar{
     background:var(--sage);
@@ -553,24 +561,14 @@
       <span class="total-value" id="cartTotal">0.00 €</span>
     </div>
 
+    <div id="caisseClientIndicator" class="caisse-client-indicator" style="display:none"></div>
+
     <div class="cart-panel">
       <div id="cartItems"></div>
       <div id="cartEmpty" class="meta" style="color:var(--ink-soft);font-size:0.85rem;">Panier vide</div>
     </div>
 
-    <div id="caisseTabClient">
-      <div id="caisseSelectedClientBar" class="caisse-selected-bar" style="display:none">
-        <span id="caisseSelectedClientName"></span>
-        <button class="clear-client" onclick="clearCaisseClient()">changer</button>
-      </div>
-      <div class="search-wrap" id="caisseClientSearchWrap" style="margin-bottom:10px;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input id="caisseClientSearch" type="text" placeholder="Chercher un client...">
-      </div>
-      <div id="caisseClientList"></div>
-    </div>
-
-    <div id="caisseTabPrestation" style="display:none">
+    <div id="caisseTabPrestation">
       <div id="prestationList"></div>
     </div>
 
@@ -588,10 +586,26 @@
 </main>
 
 <div class="bottom-tabbar" id="caisseBottomTabs">
-  <button class="active" data-tab="client" onclick="selectCaisseTab('client')"><span class="tab-icon">👤</span>Client</button>
-  <button data-tab="prestation" onclick="selectCaisseTab('prestation')"><span class="tab-icon">✂️</span>Prestation</button>
+  <button class="modal-trigger" onclick="openCaisseClientModal()"><span class="tab-icon">👤</span>Client</button>
+  <button class="active" data-tab="prestation" onclick="selectCaisseTab('prestation')"><span class="tab-icon">✂️</span>Prestation</button>
   <button data-tab="autre" onclick="selectCaisseTab('autre')"><span class="tab-icon">🛍️</span>Autre</button>
   <button class="btn-encaisser" id="btnEncaisser"><span class="tab-icon">💶</span>Encaisser</button>
+</div>
+
+<!-- Modal choix client caisse -->
+<div class="modal-overlay" id="overlayCaisseClient">
+  <div class="modal">
+    <h2>Choisir un client</h2>
+    <div class="search-wrap" style="margin-bottom:10px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="caisseModalSearch" type="text" placeholder="Chercher un client...">
+    </div>
+    <div id="caisseModalClientList" style="max-height:45vh;overflow-y:auto;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btnCancelCaisseClient">Annuler</button>
+      <button class="btn btn-primary" id="btnValidateCaisseClient">Valider</button>
+    </div>
+  </div>
 </div>
 
 <!-- Modal paiement -->
@@ -951,9 +965,9 @@ function showView(view){
     selectParamType(currentParamType);
   }
   if (view === 'caisse'){
-    renderCaisseClientList(clients);
     renderPrestationList();
     renderCart();
+    updateCaisseClientIndicator();
     selectCaisseTab(caisseTab);
   }
 }
@@ -1053,59 +1067,72 @@ document.getElementById('btnNewClient').addEventListener('click', openClientModa
 // ---------- Caisse ----------
 let cart = [];
 let caisseClient = null;
-let caisseTab = 'client';
+let caisseTab = 'prestation';
+let caisseTempClientId = null;
+let caisseModalFilteredList = [];
 
 function selectCaisseTab(tab){
   caisseTab = tab;
-  document.querySelectorAll('#caisseBottomTabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-  document.getElementById('caisseTabClient').style.display = tab === 'client' ? '' : 'none';
+  document.querySelectorAll('#caisseBottomTabs button[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   document.getElementById('caisseTabPrestation').style.display = tab === 'prestation' ? '' : 'none';
   document.getElementById('caisseTabAutre').style.display = tab === 'autre' ? '' : 'none';
 }
 
-function renderCaisseClientList(list){
-  const container = document.getElementById('caisseClientList');
+function renderCaisseModalClientList(list){
+  const container = document.getElementById('caisseModalClientList');
   if (!list.length){
     container.innerHTML = '<div class="meta" style="color:var(--ink-soft);font-size:0.85rem;">Aucun client.</div>';
     return;
   }
   container.innerHTML = list.map(cl => `
-    <div class="caisse-client-card" onclick="selectCaisseClient('${cl.ID_Client}')">
+    <div class="caisse-client-card ${cl.ID_Client === caisseTempClientId ? 'selected' : ''}" onclick="pickCaisseTempClient('${cl.ID_Client}')">
       <div class="name">${cl.Prenom || ''} ${cl.Nom || ''}</div>
       <div class="meta">${cl.Telephone || ''}</div>
     </div>
   `).join('');
 }
 
-document.getElementById('caisseClientSearch').addEventListener('input', (e) => {
+function openCaisseClientModal(){
+  caisseTempClientId = caisseClient ? caisseClient.ID_Client : null;
+  caisseModalFilteredList = clients;
+  document.getElementById('caisseModalSearch').value = '';
+  renderCaisseModalClientList(caisseModalFilteredList);
+  document.getElementById('overlayCaisseClient').classList.add('show');
+}
+
+function pickCaisseTempClient(idClient){
+  caisseTempClientId = (caisseTempClientId === idClient) ? null : idClient;
+  renderCaisseModalClientList(caisseModalFilteredList);
+}
+
+document.getElementById('caisseModalSearch').addEventListener('input', (e) => {
   const q = e.target.value.trim().toLowerCase();
-  const filtered = !q ? clients : clients.filter(c =>
+  caisseModalFilteredList = !q ? clients : clients.filter(c =>
     (c.Nom || '').toLowerCase().includes(q) ||
     (c.Prenom || '').toLowerCase().includes(q) ||
     (c.Telephone || '').toLowerCase().includes(q)
   );
-  renderCaisseClientList(filtered);
+  renderCaisseModalClientList(caisseModalFilteredList);
 });
 
-function selectCaisseClient(idClient){
-  const cl = clients.find(c => c.ID_Client === idClient);
-  if (!cl) return;
-  caisseClient = cl;
+document.getElementById('btnCancelCaisseClient').addEventListener('click', () => {
+  document.getElementById('overlayCaisseClient').classList.remove('show');
+});
 
-  document.getElementById('caisseSelectedClientName').textContent = `${cl.Prenom || ''} ${cl.Nom || ''}`.trim();
-  document.getElementById('caisseSelectedClientBar').style.display = 'flex';
-  document.getElementById('caisseClientSearchWrap').style.display = 'none';
-  document.getElementById('caisseClientList').style.display = 'none';
+document.getElementById('btnValidateCaisseClient').addEventListener('click', () => {
+  caisseClient = caisseTempClientId ? clients.find(c => c.ID_Client === caisseTempClientId) : null;
+  updateCaisseClientIndicator();
+  document.getElementById('overlayCaisseClient').classList.remove('show');
+});
 
-  selectCaisseTab('prestation');
-}
-
-function clearCaisseClient(){
-  caisseClient = null;
-  document.getElementById('caisseSelectedClientBar').style.display = 'none';
-  document.getElementById('caisseClientSearchWrap').style.display = '';
-  document.getElementById('caisseClientList').style.display = '';
-  selectCaisseTab('client');
+function updateCaisseClientIndicator(){
+  const el = document.getElementById('caisseClientIndicator');
+  if (caisseClient){
+    el.style.display = '';
+    el.textContent = `Vente pour : ${caisseClient.Prenom || ''} ${caisseClient.Nom || ''}`.trim();
+  } else {
+    el.style.display = 'none';
+  }
 }
 
 function renderPrestationList(){
@@ -1205,7 +1232,8 @@ document.getElementById('btnConfirmPaiement').addEventListener('click', async ()
   document.getElementById('overlayPaiement').classList.remove('show');
   toast('Vente enregistrée ✓');
   cart = [];
-  clearCaisseClient();
+  caisseClient = null;
+  updateCaisseClientIndicator();
   renderCart();
 });
 document.getElementById('btnCancelClient').addEventListener('click', closeClientModal);
