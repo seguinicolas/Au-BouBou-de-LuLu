@@ -345,6 +345,104 @@
     padding:4px 8px;
     line-height:1;
   }
+
+  body.has-bottom-tabs{ padding-bottom:88px; }
+
+  .bottom-tabbar{
+    display:none;
+    position:fixed;
+    bottom:0; left:0; right:0;
+    background:var(--white);
+    border-top:1px solid var(--line);
+    z-index:40;
+  }
+  .bottom-tabbar.show{ display:flex; }
+  .bottom-tabbar button{
+    flex:1;
+    background:none;
+    border:none;
+    padding:10px 4px 8px;
+    font-size:0.72rem;
+    font-weight:700;
+    color:var(--ink-soft);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:2px;
+    cursor:pointer;
+  }
+  .bottom-tabbar button .tab-icon{ font-size:1.2rem; }
+  .bottom-tabbar button.active{ color:var(--sage-dark); }
+
+  .client-badge{
+    background:var(--blush);
+    border-radius:12px;
+    padding:10px 14px;
+    margin-bottom:14px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-weight:700;
+    font-size:0.9rem;
+  }
+  .client-badge .clear-client{
+    background:none; border:none; color:var(--sage-dark);
+    font-size:0.78rem; font-weight:700; text-decoration:underline; cursor:pointer;
+  }
+
+  .cart-panel{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:14px 16px;
+    margin-bottom:14px;
+  }
+  .cart-item{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:8px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .cart-item:last-child{ border-bottom:none; }
+  .cart-item .libelle{ flex:1; font-weight:700; font-size:0.88rem; }
+  .cart-item input.cart-prix{ width:64px; text-align:right; padding:6px 8px; }
+  .cart-item input.cart-qte{ width:46px; text-align:center; padding:6px 4px; }
+
+  .cart-total-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-weight:800;
+    font-size:1.05rem;
+    margin-top:10px;
+    padding-top:10px;
+    border-top:2px solid var(--line);
+  }
+
+  .prestation-card{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:12px 14px;
+    margin-bottom:8px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    cursor:pointer;
+  }
+  .prestation-card .p-name{ font-weight:700; font-size:0.92rem; }
+  .prestation-card .p-price{ font-weight:800; color:var(--sage-dark); font-size:0.9rem; }
+
+  .caisse-client-card{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:12px 14px;
+    margin-bottom:8px;
+    cursor:pointer;
+  }
+  .caisse-client-card .name{ font-weight:700; font-size:0.92rem; }
 </style>
 </head>
 <body>
@@ -370,6 +468,7 @@
   <div class="nav-drawer">
     <div class="nav-title">Menu</div>
     <div class="nav-item active" id="navClients" onclick="showView('clients')">🐾 Clients</div>
+    <div class="nav-item" id="navCaisse" onclick="showView('caisse')">💶 Caisse</div>
     <div class="nav-item" id="navParametres" onclick="showView('parametres')">⚙️ Paramètres</div>
   </div>
 </div>
@@ -404,8 +503,75 @@
     </div>
 
     <div id="paramList"></div>
+  <div id="viewCaisse" style="display:none">
+    <div id="caisseClientBadge" class="client-badge" style="display:none">
+      <span id="caisseClientName"></span>
+      <button class="clear-client" onclick="clearCaisseClient()">changer</button>
+    </div>
+
+    <div class="cart-panel">
+      <div id="cartItems"></div>
+      <div id="cartEmpty" class="meta" style="color:var(--ink-soft);font-size:0.85rem;">Panier vide</div>
+      <div class="cart-total-row">
+        <span>Total</span>
+        <span id="cartTotal">0.00 €</span>
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-top:12px;" id="btnEncaisser">Encaisser</button>
+    </div>
+
+    <div id="caisseTabClient">
+      <div class="search-wrap" style="margin-bottom:10px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="caisseClientSearch" type="text" placeholder="Chercher un client...">
+      </div>
+      <div id="caisseClientList"></div>
+    </div>
+
+    <div id="caisseTabPrestation" style="display:none">
+      <div id="prestationList"></div>
+    </div>
+
+    <div id="caisseTabAutre" style="display:none">
+      <div class="card" style="padding:14px 16px;">
+        <div class="field-row"><label>Libellé</label><input id="autreLibelle" type="text"></div>
+        <div class="grid2">
+          <div class="field-row"><label>Prix (€)</label><input id="autrePrix" type="number" step="0.5" min="0"></div>
+          <div class="field-row"><label>Quantité</label><input id="autreQte" type="number" value="1" min="1"></div>
+        </div>
+        <button class="btn btn-primary" style="width:100%;margin-top:12px;" id="btnAddAutre">+ Ajouter au panier</button>
+      </div>
+    </div>
   </div>
 </main>
+
+<div class="bottom-tabbar" id="caisseBottomTabs">
+  <button class="active" data-tab="client" onclick="selectCaisseTab('client')"><span class="tab-icon">👤</span>Client</button>
+  <button data-tab="prestation" onclick="selectCaisseTab('prestation')"><span class="tab-icon">✂️</span>Prestation</button>
+  <button data-tab="autre" onclick="selectCaisseTab('autre')"><span class="tab-icon">🛍️</span>Autre</button>
+</div>
+
+<!-- Modal paiement -->
+<div class="modal-overlay" id="overlayPaiement">
+  <div class="modal">
+    <h2>Encaisser</h2>
+    <div class="field-row">
+      <label>Total</label>
+      <div class="val" id="paiementTotal" style="font-size:1.3rem;font-weight:800;"></div>
+    </div>
+    <div class="field-row">
+      <label>Moyen de paiement</label>
+      <select id="paiementMoyen">
+        <option value="Especes">Espèces</option>
+        <option value="CB">CB</option>
+        <option value="Cheque">Chèque</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btnCancelPaiement">Annuler</button>
+      <button class="btn btn-primary" id="btnConfirmPaiement">Valider</button>
+    </div>
+  </div>
+</div>
 
 <!-- Modal nouveau client -->
 <div class="modal-overlay" id="overlayClient">
@@ -728,13 +894,22 @@ function closeNav(){ document.getElementById('navOverlay').classList.remove('sho
 function showView(view){
   document.getElementById('viewClients').style.display = view === 'clients' ? '' : 'none';
   document.getElementById('viewParametres').style.display = view === 'parametres' ? '' : 'none';
+  document.getElementById('viewCaisse').style.display = view === 'caisse' ? '' : 'none';
   document.getElementById('navClients').classList.toggle('active', view === 'clients');
   document.getElementById('navParametres').classList.toggle('active', view === 'parametres');
+  document.getElementById('navCaisse').classList.toggle('active', view === 'caisse');
+  document.getElementById('caisseBottomTabs').classList.toggle('show', view === 'caisse');
+  document.body.classList.toggle('has-bottom-tabs', view === 'caisse');
   closeNav();
 
   if (view === 'parametres'){
     renderParamTabs();
     selectParamType(currentParamType);
+  }
+  if (view === 'caisse'){
+    renderCaisseClientList(clients);
+    renderPrestationList();
+    renderCart();
   }
 }
 
@@ -829,6 +1004,159 @@ document.getElementById('btnMenu').addEventListener('click', openNav);
 document.getElementById('navOverlay').addEventListener('click', (e) => { if (e.target.id === 'navOverlay') closeNav(); });
 document.getElementById('btnAddParam').addEventListener('click', addParamItem);
 document.getElementById('btnNewClient').addEventListener('click', openClientModal);
+
+// ---------- Caisse ----------
+let cart = [];
+let caisseClient = null;
+let caisseTab = 'client';
+
+function selectCaisseTab(tab){
+  caisseTab = tab;
+  document.querySelectorAll('#caisseBottomTabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.getElementById('caisseTabClient').style.display = tab === 'client' ? '' : 'none';
+  document.getElementById('caisseTabPrestation').style.display = tab === 'prestation' ? '' : 'none';
+  document.getElementById('caisseTabAutre').style.display = tab === 'autre' ? '' : 'none';
+}
+
+function renderCaisseClientList(list){
+  const container = document.getElementById('caisseClientList');
+  if (!list.length){
+    container.innerHTML = '<div class="meta" style="color:var(--ink-soft);font-size:0.85rem;">Aucun client.</div>';
+    return;
+  }
+  container.innerHTML = list.map(cl => `
+    <div class="caisse-client-card" onclick="selectCaisseClient('${cl.ID_Client}')">
+      <div class="name">${cl.Prenom || ''} ${cl.Nom || ''}</div>
+      <div class="meta">${cl.Telephone || ''}</div>
+    </div>
+  `).join('');
+}
+
+document.getElementById('caisseClientSearch').addEventListener('input', (e) => {
+  const q = e.target.value.trim().toLowerCase();
+  const filtered = !q ? clients : clients.filter(c =>
+    (c.Nom || '').toLowerCase().includes(q) ||
+    (c.Prenom || '').toLowerCase().includes(q) ||
+    (c.Telephone || '').toLowerCase().includes(q)
+  );
+  renderCaisseClientList(filtered);
+});
+
+function selectCaisseClient(idClient){
+  const cl = clients.find(c => c.ID_Client === idClient);
+  if (!cl) return;
+  caisseClient = cl;
+  document.getElementById('caisseClientBadge').style.display = 'flex';
+  document.getElementById('caisseClientName').textContent = `${cl.Prenom || ''} ${cl.Nom || ''}`;
+  selectCaisseTab('prestation');
+}
+
+function clearCaisseClient(){
+  caisseClient = null;
+  document.getElementById('caisseClientBadge').style.display = 'none';
+  selectCaisseTab('client');
+}
+
+function renderPrestationList(){
+  const prestations = parametres.filter(p => p.Type === 'Prestation');
+  const container = document.getElementById('prestationList');
+
+  if (!prestations.length){
+    container.innerHTML = '<div class="meta" style="color:var(--ink-soft);font-size:0.85rem;">Aucune prestation configurée (menu Paramètres).</div>';
+    return;
+  }
+
+  container.innerHTML = prestations.map(p => `
+    <div class="prestation-card" onclick='addPrestationToCart(${JSON.stringify(p.Valeur)}, ${Number(p.Prix) || 0})'>
+      <span class="p-name">${p.Valeur}</span>
+      <span class="p-price">${p.Prix ? Number(p.Prix).toFixed(2) + ' €' : '—'}</span>
+    </div>
+  `).join('');
+}
+
+function addPrestationToCart(libelle, prix){
+  cart.push({ Type: 'Prestation', Libelle: libelle, Prix: Number(prix) || 0, Quantite: 1 });
+  renderCart();
+  toast('Ajouté au panier');
+}
+
+document.getElementById('btnAddAutre').addEventListener('click', () => {
+  const libelle = document.getElementById('autreLibelle').value.trim();
+  const prix = parseFloat(document.getElementById('autrePrix').value) || 0;
+  const qte = parseInt(document.getElementById('autreQte').value, 10) || 1;
+
+  if (!libelle){ toast('Entre un libellé'); return; }
+
+  cart.push({ Type: 'Autre', Libelle: libelle, Prix: prix, Quantite: qte });
+  document.getElementById('autreLibelle').value = '';
+  document.getElementById('autrePrix').value = '';
+  document.getElementById('autreQte').value = '1';
+  renderCart();
+  toast('Ajouté au panier');
+});
+
+function renderCart(){
+  const container = document.getElementById('cartItems');
+  const emptyMsg = document.getElementById('cartEmpty');
+
+  if (!cart.length){
+    container.innerHTML = '';
+    emptyMsg.style.display = '';
+    document.getElementById('cartTotal').textContent = '0.00 €';
+    return;
+  }
+
+  emptyMsg.style.display = 'none';
+  container.innerHTML = cart.map((item, idx) => `
+    <div class="cart-item">
+      <span class="libelle">${item.Libelle}</span>
+      <input type="number" class="cart-prix" step="0.5" min="0" value="${item.Prix}" onchange="updateCartPrix(${idx}, this.value)">
+      <input type="number" class="cart-qte" min="1" value="${item.Quantite}" onchange="updateCartQte(${idx}, this.value)">
+      <button class="btn-delete" onclick="removeCartItem(${idx})">✕</button>
+    </div>
+  `).join('');
+
+  const total = cart.reduce((sum, i) => sum + (i.Prix * i.Quantite), 0);
+  document.getElementById('cartTotal').textContent = total.toFixed(2) + ' €';
+}
+
+function updateCartPrix(idx, val){ cart[idx].Prix = parseFloat(val) || 0; renderCart(); }
+function updateCartQte(idx, val){ cart[idx].Quantite = parseInt(val, 10) || 1; renderCart(); }
+function removeCartItem(idx){ cart.splice(idx, 1); renderCart(); }
+
+document.getElementById('btnEncaisser').addEventListener('click', () => {
+  if (!cart.length){ toast('Le panier est vide'); return; }
+  const total = cart.reduce((sum, i) => sum + (i.Prix * i.Quantite), 0);
+  document.getElementById('paiementTotal').textContent = total.toFixed(2) + ' €';
+  document.getElementById('overlayPaiement').classList.add('show');
+});
+
+document.getElementById('btnCancelPaiement').addEventListener('click', () => {
+  document.getElementById('overlayPaiement').classList.remove('show');
+});
+
+document.getElementById('btnConfirmPaiement').addEventListener('click', async () => {
+  const total = cart.reduce((sum, i) => sum + (i.Prix * i.Quantite), 0);
+  const moyen = document.getElementById('paiementMoyen').value;
+
+  const data = {
+    ID_Client: caisseClient ? caisseClient.ID_Client : '',
+    Client_Nom: caisseClient ? `${caisseClient.Prenom || ''} ${caisseClient.Nom || ''}`.trim() : '',
+    Total: total,
+    Moyen_Paiement: moyen,
+    Lignes: cart
+  };
+
+  toast('Encaissement...');
+  const res = await apiPost('addVente', data);
+  if (res.error){ toast('Erreur : ' + res.error); return; }
+
+  document.getElementById('overlayPaiement').classList.remove('show');
+  toast('Vente enregistrée ✓');
+  cart = [];
+  clearCaisseClient();
+  renderCart();
+});
 document.getElementById('btnCancelClient').addEventListener('click', closeClientModal);
 document.getElementById('btnSaveClient').addEventListener('click', saveClient);
 document.getElementById('btnCancelAnimal').addEventListener('click', closeAnimalModal);
