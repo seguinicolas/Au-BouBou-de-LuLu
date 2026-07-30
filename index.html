@@ -356,6 +356,33 @@
   }
 
   body.has-bottom-tabs{ padding-bottom:88px; }
+
+  .bottom-tabbar{
+    display:none;
+    position:fixed;
+    bottom:0; left:0; right:0;
+    background:var(--white);
+    border-top:1px solid var(--line);
+    z-index:40;
+  }
+  .bottom-tabbar.show{ display:flex; }
+  .bottom-tabbar button{
+    flex:1;
+    background:none;
+    border:none;
+    padding:10px 4px 8px;
+    font-size:0.72rem;
+    font-weight:700;
+    color:var(--ink-soft);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:2px;
+    cursor:pointer;
+  }
+  .bottom-tabbar button .tab-icon{ font-size:1.2rem; }
+  .bottom-tabbar button.active{ color:var(--sage-dark); }
+  .bottom-tabbar button.btn-encaisser{ background:var(--apricot); color:var(--white); }
 </style>
 </head>
 <body>
@@ -428,6 +455,13 @@
     </div>
   </div>
 </main>
+
+<div class="bottom-tabbar" id="caisseBottomTabs">
+  <button class="active" data-tab="client" onclick="selectCaisseTab('client')"><span class="tab-icon">👤</span>Client</button>
+  <button data-tab="prestation" onclick="selectCaisseTab('prestation')"><span class="tab-icon">✂️</span>Prestation</button>
+  <button data-tab="autre" onclick="selectCaisseTab('autre')"><span class="tab-icon">🛍️</span>Autre</button>
+  <button class="btn-encaisser" data-tab="encaissement" onclick="selectCaisseTab('encaissement')"><span class="tab-icon">💶</span>Encaissement</button>
+</div>
 
 <!-- Modal nouveau client -->
 <div class="modal-overlay" id="overlayClient">
@@ -754,6 +788,8 @@ function showView(view){
   document.getElementById('navClients').classList.toggle('active', view === 'clients');
   document.getElementById('navParametres').classList.toggle('active', view === 'parametres');
   document.getElementById('navCaisse').classList.toggle('active', view === 'caisse');
+  document.getElementById('caisseBottomTabs').classList.toggle('show', view === 'caisse');
+  document.body.classList.toggle('has-bottom-tabs', view === 'caisse');
   closeNav();
 
   if (view === 'parametres'){
@@ -858,6 +894,11 @@ document.getElementById('btnSaveClient').addEventListener('click', saveClient);
 document.getElementById('btnCancelAnimal').addEventListener('click', closeAnimalModal);
 document.getElementById('btnSaveAnimal').addEventListener('click', saveAnimal);
 document.getElementById('aEspece').addEventListener('change', refreshRaceOptions);
+
+// ---------- Caisse (onglets, pas encore de contenu) ----------
+function selectCaisseTab(tab){
+  document.querySelectorAll('#caisseBottomTabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+}
 
 loadAll();
 </script>
