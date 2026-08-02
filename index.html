@@ -619,6 +619,30 @@
     line-height:1.4;
   }
 
+  .historique-vente{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:10px 12px;
+    margin-bottom:8px;
+  }
+  .historique-vente-head{
+    display:flex;
+    justify-content:space-between;
+    font-weight:700;
+    font-size:0.9rem;
+  }
+  .historique-moyen{
+    font-size:0.75rem;
+    color:var(--ink-soft);
+    margin-top:2px;
+  }
+  .historique-lignes{ margin-top:6px; }
+  .historique-ligne{
+    font-size:0.8rem;
+    color:var(--ink-soft);
+  }
+
   .cart-item-remise{
     width:22px;
     height:22px;
@@ -758,7 +782,10 @@
         <div class="client-info-line" style="margin-top:8px;font-weight:700;color:var(--ink);">Animaux</div>
         <div id="caisseClientAnimaux" class="client-info-line">—</div>
         <div id="caisseFideliteBox"></div>
-        <button class="btn btn-ghost btn-small" style="margin-top:10px;" id="btnDissocierClient">Dissocier</button>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button class="btn btn-ghost btn-small" style="flex:1;" id="btnDissocierClient">Dissocier</button>
+          <button class="btn btn-ghost btn-small" style="flex:1;" id="btnHistoriqueCaisse">Historique</button>
+        </div>
       </div>
       <div class="caisse-total-card">
         <div class="header-label">Total</div>
@@ -903,6 +930,17 @@
     <div class="modal-actions">
       <button class="btn btn-ghost" id="btnCancelFidelite">Annuler</button>
       <button class="btn btn-primary" id="btnValidateFidelite">Valider</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Historique client -->
+<div class="modal-overlay" id="overlayHistorique">
+  <div class="modal">
+    <h2>Historique</h2>
+    <div id="historiqueModalContent" style="max-height:60vh;overflow-y:auto;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" style="width:100%;" id="btnCloseHistorique">Fermer</button>
     </div>
   </div>
 </div>
@@ -1117,7 +1155,84 @@ function renderCardBody(idClient){
         </div>
       </div>
     `).join('') : '<div class="meta" style="color:var(--ink-soft);font-size:0.85rem;">Aucun animal enregistré.</div>'}
+
+    <div class="section-title" style="margin-top:16px;">
+      <span>Historique</span>
+      <button class="btn btn-ghost btn-small" onclick="openHistoriqueModal('${idClient}')">Voir l'historique</button>
+    </div>
   `;
+}
+
+// ---------- Historique des ventes d'un client (modal) ----------
+let historiqueCache = {};
+let historiqueExpanded = {};
+let historiqueClientIdActuel = null;
+
+async function openHistoriqueModal(idClient){
+  historiqueClientIdActuel = idClient;
+  const container = document.getElementById('historiqueModalContent');
+  document.getElementById('overlayHistorique').classList.add('show');
+
+  if (!historiqueCache[idClient]){
+    container.innerHTML = '<div class="meta" style="color:var(--ink-soft);font-size:0.85rem;">Chargement...</div>';
+    try {
+      const data = await apiGet('getHistoriqueClient', { id_client: idClient });
+      if (data && data.error){
+        container.innerHTML = `<div class="meta" style="color:#B0453B;font-size:0.85rem;">Erreur : ${data.error}</div>`;
+        return;
+      }
+      historiqueCache[idClient] = data || [];
+    } catch (err){
+      container.innerHTML = '<div class="meta" style="color:#B0453B;font-size:0.85rem;">Impossible de charger l\'historique. Réessaie.</div>';
+      return;
+    }
+  }
+  renderHistorique(idClient);
+}
+
+document.getElementById('btnCloseHistorique').addEventListener('click', () => {
+  document.getElementById('overlayHistorique').classList.remove('show');
+});
+
+document.getElementById('btnHistoriqueCaisse').addEventListener('click', () => {
+  if (!caisseCurrentClientId){
+    bigAlert('Aucun client identifié pour le moment.');
+    return;
+  }
+  openHistoriqueModal(caisseCurrentClientId);
+});
+
+function renderHistorique(idClient){
+  const container = document.getElementById('historiqueModalContent');
+  const ventes = historiqueCache[idClient] || [];
+
+  if (!ventes.length){
+    container.innerHTML = '<div class="meta" style="color:var(--ink-soft);font-size:0.85rem;">Aucune vente enregistrée.</div>';
+    return;
+  }
+
+  const visibleCount = historiqueExpanded[idClient] ? ventes.length : Math.min(10, ventes.length);
+  const visibles = ventes.slice(0, visibleCount);
+
+  container.innerHTML = visibles.map(v => `
+    <div class="historique-vente">
+      <div class="historique-vente-head">
+        <span>${formatDateHeureFR(v.Date)}</span>
+        <span>${Number(v.Total || 0).toFixed(2)} €</span>
+      </div>
+      <div class="historique-moyen">${v.Moyen_Paiement || ''}</div>
+      <div class="historique-lignes">
+        ${(v.Lignes || []).map(l => `<div class="historique-ligne">${l.Libelle}${l.Animal ? ' (' + l.Animal + ')' : ''} — ${Number(l.Prix || 0).toFixed(2)} €</div>`).join('')}
+      </div>
+    </div>
+  `).join('') + (ventes.length > visibleCount
+    ? `<button class="btn btn-ghost btn-small" style="width:100%;margin-top:6px;" onclick="expandHistorique('${idClient}')">Voir les ${ventes.length - visibleCount} autres visites</button>`
+    : '');
+}
+
+function expandHistorique(idClient){
+  historiqueExpanded[idClient] = true;
+  renderHistorique(idClient);
 }
 
 // ---------- Modal client ----------
