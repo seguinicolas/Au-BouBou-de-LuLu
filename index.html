@@ -32,8 +32,14 @@
   header{
     background:var(--sage);
     color:var(--white);
-    padding:22px 18px 26px;
+    padding:18px 18px 26px;
     border-radius:0 0 24px 24px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+
+  .header-main{
     display:flex;
     align-items:center;
     gap:12px;
@@ -53,6 +59,14 @@
     font-size:0.8rem;
     opacity:0.85;
     font-weight:500;
+  }
+
+  .header-datetime{
+    font-size:1.3rem;
+    font-weight:400;
+    text-align:center;
+    text-transform:capitalize;
+    opacity:0.95;
   }
 
   main{ max-width:640px; margin:0 auto; padding:16px; }
@@ -259,6 +273,41 @@
 
   .toast.show{ opacity:1; }
 
+  .big-alert-overlay{
+    display:none;
+    position:fixed; inset:0;
+    background:rgba(43,42,40,0.35);
+    z-index:110;
+    align-items:center;
+    justify-content:center;
+  }
+  .big-alert-overlay.show{ display:flex; }
+  .big-alert-box{
+    background:var(--white);
+    border-radius:var(--radius);
+    padding:26px 24px;
+    max-width:320px;
+    text-align:center;
+    font-size:1.1rem;
+    font-weight:700;
+    color:var(--ink);
+    box-shadow:0 12px 32px rgba(43,42,40,0.25);
+    position:relative;
+    white-space:pre-line;
+  }
+  .big-alert-close{
+    position:absolute;
+    top:8px;
+    right:10px;
+    background:none;
+    border:none;
+    font-size:1.3rem;
+    line-height:1;
+    color:var(--ink-soft);
+    cursor:pointer;
+    padding:4px;
+  }
+
   .hamburger-btn{
     background:none;
     border:none;
@@ -383,38 +432,249 @@
   .bottom-tabbar button .tab-icon{ font-size:1.2rem; }
   .bottom-tabbar button.active{ color:var(--sage-dark); }
   .bottom-tabbar button.btn-encaisser{ background:var(--apricot); color:var(--white); }
+
+  .caisse-header-row{
+    display:flex;
+    gap:10px;
+    margin-bottom:14px;
+    align-items:stretch;
+  }
+
+  .caisse-client-card{
+    flex:1;
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:14px 16px;
+    min-width:0;
+  }
+  .caisse-client-card .client-info-line{
+    font-size:0.82rem;
+    color:var(--ink-soft);
+    margin-top:3px;
+  }
+
+  .caisse-total-card{
+    background:var(--sage);
+    color:var(--white);
+    border-radius:var(--radius);
+    padding:16px 22px;
+    min-width:170px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:flex-end;
+    flex-shrink:0;
+  }
+  .caisse-total-card .total-value{
+    font-size:2.6rem;
+    font-weight:800;
+    line-height:1;
+  }
+
+  .caisse-panier-card{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:14px 16px;
+  }
+
+  .header-label{
+    font-size:0.68rem;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    color:var(--ink-soft);
+    opacity:0.85;
+  }
+  .caisse-total-card .header-label{ color:var(--white); }
+
+  .client-pick-card{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:12px 14px;
+    margin-bottom:8px;
+    cursor:pointer;
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:8px;
+    align-items:start;
+  }
+  .client-pick-card .name{ font-weight:700; font-size:0.88rem; }
+  .client-pick-card .meta{ font-size:0.76rem; line-height:1.3; }
+  .client-pick-card.selected{ border-color:var(--sage); background:var(--blush); }
+
+  .fidelite-line{
+    font-size:0.82rem;
+    font-weight:700;
+    color:var(--sage-dark);
+    margin-top:8px;
+  }
+  .fidelite-banner{
+    background:var(--blush);
+    border-radius:12px;
+    padding:10px 12px;
+    margin-top:6px;
+    font-size:0.82rem;
+    color:var(--ink);
+    line-height:1.4;
+  }
+
+  .prestation-pick-card{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:12px 14px;
+    margin-bottom:8px;
+    cursor:pointer;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .prestation-pick-card .p-name{ font-weight:700; font-size:0.92rem; }
+  .prestation-pick-card .p-price{ font-weight:800; color:var(--sage-dark); font-size:0.9rem; }
+  .prestation-pick-card.selected{ border-color:var(--sage); background:var(--blush); }
+
+  .cart-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    padding:8px 0;
+    border-bottom:1px solid var(--line);
+    font-size:0.9rem;
+  }
+  .cart-item:last-child{ border-bottom:none; }
+  .cart-remise-tag{
+    font-size:0.72rem;
+    color:#B0453B;
+    font-weight:700;
+    margin-top:2px;
+  }
+  .cart-item .libelle{ font-weight:700; }
+  .cart-item .prix{ font-weight:700; color:var(--sage-dark); margin-right:10px; }
+
+  .cart-item-row{ display:flex; align-items:center; gap:10px; }
+
+  .cart-animal-select{
+    font-size:0.78rem;
+    padding:5px 6px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:var(--white);
+    color:var(--ink);
+    max-width:110px;
+  }
+
+  .cart-item-remove{
+    width:22px;
+    height:22px;
+    min-width:22px;
+    border-radius:50%;
+    background:#C0453B;
+    border:none;
+    color:var(--white);
+    font-weight:900;
+    font-size:1rem;
+    line-height:1;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:0;
+  }
+
+  .paiement-mode-buttons{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    margin:16px 0;
+  }
+  .paiement-mode-buttons .btn{
+    padding:14px;
+    font-size:1rem;
+  }
+
+  .note-card{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:12px 14px;
+    margin-bottom:8px;
+  }
+  .note-card .note-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:8px;
+  }
+  .note-card .note-date{
+    font-size:0.72rem;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  .note-card .note-contenu{
+    font-size:0.9rem;
+    white-space:pre-wrap;
+    line-height:1.4;
+  }
+
+  .cart-item-remise{
+    width:22px;
+    height:22px;
+    min-width:22px;
+    border-radius:50%;
+    background:var(--apricot);
+    border:none;
+    color:var(--white);
+    font-weight:900;
+    font-size:0.7rem;
+    line-height:1;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:0;
+  }
 </style>
 </head>
 <body>
 
 <header>
-  <svg class="paw" viewBox="0 0 64 64" fill="currentColor">
-    <ellipse cx="32" cy="42" rx="15" ry="12"/>
-    <ellipse cx="14" cy="24" rx="7" ry="9"/>
-    <ellipse cx="50" cy="24" rx="7" ry="9"/>
-    <ellipse cx="24" cy="12" rx="6" ry="8"/>
-    <ellipse cx="40" cy="12" rx="6" ry="8"/>
-  </svg>
-  <div>
-    <h1>Au BouBou de Lulu</h1>
-    <p>Fiches clients &amp; compagnons</p>
+  <div class="header-datetime" id="headerDateTime"></div>
+  <div class="header-main">
+    <svg class="paw" viewBox="0 0 64 64" fill="currentColor">
+      <ellipse cx="32" cy="42" rx="15" ry="12"/>
+      <ellipse cx="14" cy="24" rx="7" ry="9"/>
+      <ellipse cx="50" cy="24" rx="7" ry="9"/>
+      <ellipse cx="24" cy="12" rx="6" ry="8"/>
+      <ellipse cx="40" cy="12" rx="6" ry="8"/>
+    </svg>
+    <div>
+      <h1>Au BouBou de Lulu</h1>
+      <p>Fiches clients &amp; compagnons</p>
+    </div>
+    <button class="hamburger-btn" id="btnMenu" aria-label="Menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
   </div>
-  <button class="hamburger-btn" id="btnMenu" aria-label="Menu">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-  </button>
 </header>
 
 <div class="nav-overlay" id="navOverlay">
   <div class="nav-drawer">
     <div class="nav-title">Menu</div>
-    <div class="nav-item active" id="navClients" onclick="showView('clients')">🐾 Clients</div>
     <div class="nav-item" id="navCaisse" onclick="showView('caisse')">💶 Caisse</div>
+    <div class="nav-item" id="navClients" onclick="showView('clients')">🐾 Clients</div>
+    <div class="nav-item" id="navNotes" onclick="showView('notes')">📝 Notes</div>
+    <div class="nav-item" id="navAgenda" onclick="showView('agenda')">📅 Agenda</div>
+    <div class="nav-item" id="navCloture" onclick="showView('cloture')">🔒 Clôture</div>
+    <div class="nav-item" id="navStatistique" onclick="showView('statistique')">📊 Statistique</div>
     <div class="nav-item" id="navParametres" onclick="showView('parametres')">⚙️ Paramètres</div>
   </div>
 </div>
 
 <main>
-  <div id="viewClients">
+  <div id="viewClients" style="display:none">
     <div class="toolbar">
       <div class="search-wrap">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -445,13 +705,71 @@
     <div id="paramList"></div>
   </div>
 
-  <div id="viewCaisse" style="display:none">
+  <div id="viewAgenda" style="display:none">
     <div class="empty">
       <svg class="paw" viewBox="0 0 64 64" fill="currentColor" style="display:block;margin:0 auto 8px">
         <ellipse cx="32" cy="42" rx="15" ry="12"/><ellipse cx="14" cy="24" rx="7" ry="9"/>
         <ellipse cx="50" cy="24" rx="7" ry="9"/><ellipse cx="24" cy="12" rx="6" ry="8"/><ellipse cx="40" cy="12" rx="6" ry="8"/>
       </svg>
-      Nouvelle feuille Caisse, prête à construire.
+      Agenda — à construire.
+    </div>
+  </div>
+
+  <div id="viewCloture" style="display:none">
+    <div class="empty">
+      <svg class="paw" viewBox="0 0 64 64" fill="currentColor" style="display:block;margin:0 auto 8px">
+        <ellipse cx="32" cy="42" rx="15" ry="12"/><ellipse cx="14" cy="24" rx="7" ry="9"/>
+        <ellipse cx="50" cy="24" rx="7" ry="9"/><ellipse cx="24" cy="12" rx="6" ry="8"/><ellipse cx="40" cy="12" rx="6" ry="8"/>
+      </svg>
+      Clôture — à construire.
+    </div>
+  </div>
+
+  <div id="viewStatistique" style="display:none">
+    <div class="empty">
+      <svg class="paw" viewBox="0 0 64 64" fill="currentColor" style="display:block;margin:0 auto 8px">
+        <ellipse cx="32" cy="42" rx="15" ry="12"/><ellipse cx="14" cy="24" rx="7" ry="9"/>
+        <ellipse cx="50" cy="24" rx="7" ry="9"/><ellipse cx="24" cy="12" rx="6" ry="8"/><ellipse cx="40" cy="12" rx="6" ry="8"/>
+      </svg>
+      Statistique — à construire.
+    </div>
+  </div>
+
+  <div id="viewNotes" style="display:none">
+    <div class="card" style="padding:14px 16px;margin-bottom:14px;">
+      <div class="section-title"><span id="noteFormTitle">Nouvelle note</span></div>
+      <input type="hidden" id="noteEditId">
+      <textarea id="noteContenu" rows="3" placeholder="Écris ta note ici..."></textarea>
+      <button class="btn btn-primary" style="width:100%;margin-top:10px;" id="btnAddNote">+ Ajouter</button>
+    </div>
+    <div id="notesList"></div>
+  </div>
+
+  <div id="viewCaisse">
+    <div class="caisse-header-row">
+      <div class="caisse-client-card">
+        <div class="header-label">Client</div>
+        <div class="client-info-line" id="caisseClientNom">Nom : —</div>
+        <div class="client-info-line" id="caisseClientPrenom">Prénom : —</div>
+        <div class="client-info-line" id="caisseClientTel">Téléphone : —</div>
+        <div class="client-info-line" id="caisseClientEmail">Email : —</div>
+        <div class="client-info-line" id="caisseClientAdresse">Adresse : —</div>
+        <div class="client-info-line" id="caisseClientDateNaissance">Date de naissance : —</div>
+        <div class="client-info-line" style="margin-top:8px;font-weight:700;color:var(--ink);">Animaux</div>
+        <div id="caisseClientAnimaux" class="client-info-line">—</div>
+        <div id="caisseFideliteBox"></div>
+        <button class="btn btn-ghost btn-small" style="margin-top:10px;" id="btnDissocierClient">Dissocier</button>
+      </div>
+      <div class="caisse-total-card">
+        <div class="header-label">Total</div>
+        <div class="total-value" id="cartTotal">0.00 €</div>
+      </div>
+    </div>
+
+    <div class="caisse-panier-card">
+      <div class="header-label" style="margin-bottom:8px;">Panier</div>
+      <div id="cartItems"></div>
+      <div id="cartEmpty" class="meta" style="color:var(--ink-soft);font-size:0.85rem;">Panier vide</div>
     </div>
   </div>
 </main>
@@ -463,10 +781,137 @@
   <button class="btn-encaisser" data-tab="encaissement" onclick="selectCaisseTab('encaissement')"><span class="tab-icon">💶</span>Encaissement</button>
 </div>
 
+<!-- Modal choix client caisse -->
+<div class="modal-overlay" id="overlayCaisseClient">
+  <div class="modal">
+    <h2>Choisir un client</h2>
+    <div class="search-wrap" style="margin-bottom:10px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="caisseModalSearch" type="text" placeholder="Nom, prénom ou adresse...">
+    </div>
+    <div id="caisseModalClientList" style="max-height:50vh;overflow-y:auto;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btnCancelCaisseClient">Annuler</button>
+      <button class="btn btn-primary" id="btnValidateCaisseClient">Valider</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal choix prestation -->
+<div class="modal-overlay" id="overlayCaissePrestation">
+  <div class="modal">
+    <h2>Choisir une prestation</h2>
+    <div id="prestationPickList" style="max-height:55vh;overflow-y:auto;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btnCancelPrestation">Annuler</button>
+      <button class="btn btn-primary" id="btnValidatePrestation">Valider</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal detail Divers -->
+<div class="modal-overlay" id="overlayDivers">
+  <div class="modal">
+    <h2>Divers</h2>
+    <div class="field-row"><label>Libellé</label><input id="diversLibelle" type="text" placeholder="Ex : Vente shampoing"></div>
+    <div class="field-row"><label>Prix (€)</label><input id="diversPrix" type="number" step="0.5" min="0"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btnCancelDivers">Annuler</button>
+      <button class="btn btn-primary" id="btnValidateDivers">Valider</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Autre (vente de produit) -->
+<div class="modal-overlay" id="overlayAutre">
+  <div class="modal">
+    <h2>Vente d'un article</h2>
+    <div class="field-row"><label>Libellé</label><input id="autreLibelle" type="text" placeholder="Ex : Collier, Antipuce, Shampoing"></div>
+    <div class="field-row"><label>Prix (€)</label><input id="autrePrix" type="number" step="0.5" min="0"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btnCancelAutre">Annuler</button>
+      <button class="btn btn-primary" id="btnValidateAutre">Valider</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal remise sur une ligne -->
+<div class="modal-overlay" id="overlayRemise">
+  <div class="modal">
+    <h2>Prix et remise</h2>
+    <div class="field-row"><label>Prix (€)</label><input id="remisePrix" type="number" step="0.5" min="0"></div>
+    <div class="field-row">
+      <label>Type de remise</label>
+      <select id="remiseType">
+        <option value="montant">Montant (€)</option>
+        <option value="pourcentage">Pourcentage (%)</option>
+      </select>
+    </div>
+    <div class="field-row"><label>Valeur de la remise</label><input id="remiseValeur" type="number" step="0.5" min="0"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btnCancelRemise">Annuler</button>
+      <button class="btn btn-primary" id="btnValidateRemise">Valider</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Encaissement -->
+<div class="modal-overlay" id="overlayPaiementMode">
+  <div class="modal">
+    <h2>Mode de règlement</h2>
+    <div class="field-row" style="text-align:center;">
+      <label>Reste à régler</label>
+      <div class="val" id="paiementResteVal" style="font-size:1.6rem;font-weight:800;"></div>
+    </div>
+    <div class="paiement-mode-buttons">
+      <button class="btn btn-primary" onclick="choisirModePaiement('Especes')">Espèces</button>
+      <button class="btn btn-primary" onclick="choisirModePaiement('CB')">CB</button>
+      <button class="btn btn-primary" onclick="choisirModePaiement('Cheque')">Chèque</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" style="width:100%;" id="btnCancelPaiementMode">Annuler l'encaissement</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="overlayPaiementMontant">
+  <div class="modal">
+    <h2 id="paiementMontantTitre">Espèces</h2>
+    <div class="field-row" style="text-align:center;">
+      <label>Montant</label>
+      <input id="paiementMontantInput" type="number" step="0.5" min="0" style="font-size:1.5rem;font-weight:800;text-align:center;">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btnRetourModePaiement">Retour</button>
+      <button class="btn btn-primary" id="btnValiderMontantPaiement">Valider</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal remise fidelite -->
+<div class="modal-overlay" id="overlayFidelite">
+  <div class="modal">
+    <h2>Utiliser la fidélité</h2>
+    <div class="field-row">
+      <label>Type de remise</label>
+      <select id="fideliteType">
+        <option value="montant">Montant (€)</option>
+        <option value="pourcentage">Pourcentage (%)</option>
+      </select>
+    </div>
+    <div class="field-row"><label>Valeur</label><input id="fideliteValeur" type="number" step="0.5" min="0"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btnCancelFidelite">Annuler</button>
+      <button class="btn btn-primary" id="btnValidateFidelite">Valider</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal nouveau client -->
 <div class="modal-overlay" id="overlayClient">
   <div class="modal">
-    <h2>Nouveau client</h2>
+    <h2 id="clientModalTitle">Nouveau client</h2>
+    <input type="hidden" id="fEditId">
     <div class="grid3">
       <div class="field-row"><label>Nom *</label><input id="fNom" type="text"></div>
       <div class="field-row"><label>Prénom</label><input id="fPrenom" type="text"></div>
@@ -514,6 +959,13 @@
 
 <div class="toast" id="toast"></div>
 
+<div class="big-alert-overlay" id="bigAlertOverlay">
+  <div class="big-alert-box">
+    <button class="big-alert-close" onclick="closeBigAlert()">✕</button>
+    <div id="bigAlertBox"></div>
+  </div>
+</div>
+
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbwAub-4OtWsI6pPboX4RafkHg365sdRMKw_732ZnQThlXPr74iRfEt-vwTeSo160BQl/exec';
 
@@ -545,19 +997,26 @@ function toast(msg){
   setTimeout(()=>t.classList.remove('show'), 2200);
 }
 
+function bigAlert(msg){
+  const box = document.getElementById('bigAlertBox');
+  const overlay = document.getElementById('bigAlertOverlay');
+  box.textContent = msg;
+  overlay.classList.add('show');
+}
+
+function closeBigAlert(){
+  document.getElementById('bigAlertOverlay').classList.remove('show');
+}
+
 // ---------- Chargement initial ----------
 async function loadAll(){
-  const [c, a, p] = await Promise.all([
-    apiGet('getClients'),
-    apiGet('getAnimaux'),
-    apiGet('getParametres')
-  ]);
+  const initData = await apiGet('getInitData');
 
-  clients = c || [];
-  parametres = p || [];
+  clients = initData.clients || [];
+  parametres = initData.parametres || [];
 
   animauxParClient = {};
-  (a || []).forEach(an => {
+  (initData.animaux || []).forEach(an => {
     if (!animauxParClient[an.ID_Client]) animauxParClient[an.ID_Client] = [];
     animauxParClient[an.ID_Client].push(an);
   });
@@ -633,6 +1092,9 @@ function renderCardBody(idClient){
   const adresseComplete = [cl.Adresse, [cl.Code_Postal, cl.Commune].filter(Boolean).join(' ')].filter(Boolean).join(', ');
 
   body.innerHTML = `
+    <div style="text-align:right;margin-bottom:6px;">
+      <button class="btn btn-ghost btn-small" onclick="openEditClientModal('${idClient}')">Modifier</button>
+    </div>
     ${cl.Email ? `<div class="field-row"><label>Email</label><div class="val">${cl.Email}</div></div>` : ''}
     ${cl.Date_Naissance ? `<div class="field-row"><label>Date de naissance</label><div class="val">${formatDateFR(cl.Date_Naissance)}</div></div>` : ''}
     ${adresseComplete ? `<div class="field-row"><label>Adresse</label><div class="val">${adresseComplete}</div></div>` : ''}
@@ -660,9 +1122,31 @@ function renderCardBody(idClient){
 
 // ---------- Modal client ----------
 function openClientModal(){
+  document.getElementById('clientModalTitle').textContent = 'Nouveau client';
+  document.getElementById('fEditId').value = '';
   ['fNom','fPrenom','fTel','fEmail','fDateNaissance','fAdresse','fCodePostal','fCommune','fNotes'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('overlayClient').classList.add('show');
 }
+
+function openEditClientModal(idClient){
+  const cl = clients.find(c => c.ID_Client === idClient);
+  if (!cl) return;
+
+  document.getElementById('clientModalTitle').textContent = 'Modifier le client';
+  document.getElementById('fEditId').value = cl.ID_Client;
+  document.getElementById('fNom').value = cl.Nom || '';
+  document.getElementById('fPrenom').value = cl.Prenom || '';
+  document.getElementById('fTel').value = cl.Telephone || '';
+  document.getElementById('fEmail').value = cl.Email || '';
+  document.getElementById('fDateNaissance').value = cl.Date_Naissance || '';
+  document.getElementById('fAdresse').value = cl.Adresse || '';
+  document.getElementById('fCodePostal').value = cl.Code_Postal || '';
+  document.getElementById('fCommune').value = cl.Commune || '';
+  document.getElementById('fNotes').value = cl.Notes || '';
+
+  document.getElementById('overlayClient').classList.add('show');
+}
+
 function closeClientModal(){
   document.getElementById('overlayClient').classList.remove('show');
 }
@@ -670,6 +1154,8 @@ function closeClientModal(){
 async function saveClient(){
   const Nom = document.getElementById('fNom').value.trim();
   if (!Nom){ toast('Le nom est obligatoire'); return; }
+
+  const editId = document.getElementById('fEditId').value;
 
   const data = {
     Nom,
@@ -684,12 +1170,25 @@ async function saveClient(){
   };
 
   toast('Enregistrement...');
-  const res = await apiPost('addClient', data);
-  if (res.error){ toast('Erreur : ' + res.error); return; }
 
-  closeClientModal();
-  toast('Client ajouté ✓');
-  await loadAll();
+  if (editId){
+    data.ID_Client = editId;
+    const res = await apiPost('updateClient', data);
+    if (res.error){ toast('Erreur : ' + res.error); return; }
+
+    closeClientModal();
+    toast('Client modifié ✓');
+    await loadAll();
+    document.getElementById(`card-${editId}`).classList.add('open');
+    renderCardBody(editId);
+  } else {
+    const res = await apiPost('addClient', data);
+    if (res.error){ toast('Erreur : ' + res.error); return; }
+
+    closeClientModal();
+    toast('Client ajouté ✓');
+    await loadAll();
+  }
 }
 
 // ---------- Modal animal ----------
@@ -785,9 +1284,17 @@ function showView(view){
   document.getElementById('viewClients').style.display = view === 'clients' ? '' : 'none';
   document.getElementById('viewParametres').style.display = view === 'parametres' ? '' : 'none';
   document.getElementById('viewCaisse').style.display = view === 'caisse' ? '' : 'none';
+  document.getElementById('viewAgenda').style.display = view === 'agenda' ? '' : 'none';
+  document.getElementById('viewCloture').style.display = view === 'cloture' ? '' : 'none';
+  document.getElementById('viewStatistique').style.display = view === 'statistique' ? '' : 'none';
+  document.getElementById('viewNotes').style.display = view === 'notes' ? '' : 'none';
   document.getElementById('navClients').classList.toggle('active', view === 'clients');
   document.getElementById('navParametres').classList.toggle('active', view === 'parametres');
   document.getElementById('navCaisse').classList.toggle('active', view === 'caisse');
+  document.getElementById('navAgenda').classList.toggle('active', view === 'agenda');
+  document.getElementById('navCloture').classList.toggle('active', view === 'cloture');
+  document.getElementById('navStatistique').classList.toggle('active', view === 'statistique');
+  document.getElementById('navNotes').classList.toggle('active', view === 'notes');
   document.getElementById('caisseBottomTabs').classList.toggle('show', view === 'caisse');
   document.body.classList.toggle('has-bottom-tabs', view === 'caisse');
   closeNav();
@@ -795,6 +1302,9 @@ function showView(view){
   if (view === 'parametres'){
     renderParamTabs();
     selectParamType(currentParamType);
+  }
+  if (view === 'notes'){
+    loadNotes();
   }
 }
 
@@ -895,12 +1405,619 @@ document.getElementById('btnCancelAnimal').addEventListener('click', closeAnimal
 document.getElementById('btnSaveAnimal').addEventListener('click', saveAnimal);
 document.getElementById('aEspece').addEventListener('change', refreshRaceOptions);
 
-// ---------- Caisse (onglets, pas encore de contenu) ----------
+// ---------- Caisse (onglets) ----------
+let cart = [];
+let caisseCurrentClientId = null;
+
 function selectCaisseTab(tab){
+  if (tab === 'client' && caisseCurrentClientId){
+    bigAlert('Un client est déjà identifié, veuillez le dissocier avant d\'en choisir un autre');
+    return;
+  }
+
+  document.querySelectorAll('#caisseBottomTabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  if (tab === 'client'){
+    openCaisseClientModal();
+  } else if (tab === 'prestation'){
+    openCaissePrestationModal();
+  } else if (tab === 'autre'){
+    openAutreModal();
+  } else if (tab === 'encaissement'){
+    openPaiementModal();
+  }
+}
+
+function setActiveTabOnly(tab){
   document.querySelectorAll('#caisseBottomTabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
 }
 
-loadAll();
+function getDefaultAnimalForCart(){
+  if (!caisseCurrentClientId) return '';
+  const animaux = animauxParClient[caisseCurrentClientId] || [];
+  return animaux.length === 1 ? animaux[0].Nom_Animal : '';
+}
+
+function renderCart(){
+  const container = document.getElementById('cartItems');
+  const emptyMsg = document.getElementById('cartEmpty');
+
+  if (!cart.length){
+    container.innerHTML = '';
+    emptyMsg.style.display = '';
+    document.getElementById('cartTotal').textContent = '0.00 €';
+    return;
+  }
+
+  emptyMsg.style.display = 'none';
+  const animaux = caisseCurrentClientId ? (animauxParClient[caisseCurrentClientId] || []) : [];
+
+  container.innerHTML = cart.map((item, idx) => `
+    <div class="cart-item">
+      <div>
+        <span class="libelle">${item.Libelle}</span>
+        ${item.RemiseValeur ? `
+          <div class="cart-remise-tag">Prix initial : ${item.Prix.toFixed(2)} €</div>
+          <div class="cart-remise-tag">Remise : ${item.RemiseType === 'pourcentage' ? '-' + item.RemiseValeur + '%' : '-' + item.RemiseValeur.toFixed(2) + ' €'}</div>
+        ` : ''}
+      </div>
+      <div class="cart-item-row">
+        ${(animaux.length && item.Type !== 'Remise') ? `
+          <select class="cart-animal-select" onchange="updateCartAnimal(${idx}, this.value)">
+            <option value="">Animal</option>
+            ${animaux.map(a => `<option value="${a.Nom_Animal}" ${item.Animal === a.Nom_Animal ? 'selected' : ''}>${a.Nom_Animal}</option>`).join('')}
+          </select>
+        ` : ''}
+        <span class="prix">${computeFinalPrice(item).toFixed(2)} €</span>
+        ${item.Type !== 'Remise' ? `<button class="cart-item-remise" onclick="openRemiseModal(${idx})">%</button>` : ''}
+        <button class="cart-item-remove" onclick="removeCartItem(${idx})">−</button>
+      </div>
+    </div>
+  `).join('');
+
+  const total = cart.reduce((sum, i) => sum + (computeFinalPrice(i) * i.Quantite), 0);
+  document.getElementById('cartTotal').textContent = total.toFixed(2) + ' €';
+}
+
+function computeFinalPrice(item){
+  const base = item.Prix || 0;
+  if (item.RemiseType === 'pourcentage' && item.RemiseValeur){
+    return Math.max(0, base * (1 - item.RemiseValeur / 100));
+  }
+  if (item.RemiseType === 'montant' && item.RemiseValeur){
+    return Math.max(0, base - item.RemiseValeur);
+  }
+  return base;
+}
+
+function updateCartAnimal(idx, val){
+  cart[idx].Animal = val;
+}
+
+function removeCartItem(idx){
+  cart.splice(idx, 1);
+  renderCart();
+}
+
+// ---------- Remise sur une ligne ----------
+let caisseRemiseIdx = null;
+
+function openRemiseModal(idx){
+  caisseRemiseIdx = idx;
+  const item = cart[idx];
+  document.getElementById('remisePrix').value = item.Prix.toFixed(2);
+  document.getElementById('remiseType').value = item.RemiseType || 'montant';
+  document.getElementById('remiseValeur').value = item.RemiseValeur || '';
+  document.getElementById('overlayRemise').classList.add('show');
+}
+
+document.getElementById('btnCancelRemise').addEventListener('click', () => {
+  document.getElementById('overlayRemise').classList.remove('show');
+});
+
+document.getElementById('btnValidateRemise').addEventListener('click', () => {
+  if (caisseRemiseIdx === null) return;
+
+  const item = cart[caisseRemiseIdx];
+  item.Prix = parseFloat(document.getElementById('remisePrix').value) || 0;
+  item.RemiseType = document.getElementById('remiseType').value;
+  item.RemiseValeur = parseFloat(document.getElementById('remiseValeur').value) || 0;
+
+  document.getElementById('overlayRemise').classList.remove('show');
+  renderCart();
+});
+
+let caisseTempClientId = null;
+let caisseModalFilteredList = [];
+
+function renderCaisseModalClientList(list){
+  const container = document.getElementById('caisseModalClientList');
+  const q = document.getElementById('caisseModalSearch').value.trim();
+
+  if (!list.length){
+    container.innerHTML = q
+      ? '<div class="meta" style="color:var(--ink-soft);font-size:0.85rem;">Aucun client trouvé.</div>'
+      : '<div class="meta" style="color:var(--ink-soft);font-size:0.85rem;">Tape pour rechercher un client.</div>';
+    return;
+  }
+  container.innerHTML = list.map(cl => {
+    const adresseComplete = [cl.Adresse, [cl.Code_Postal, cl.Commune].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+    const animaux = animauxParClient[cl.ID_Client] || [];
+    const animauxTexte = animaux.length ? animaux.map(a => `${a.Nom_Animal} (${a.Espece})`).join(', ') : '';
+
+    return `
+    <div class="client-pick-card ${cl.ID_Client === caisseTempClientId ? 'selected' : ''}" onclick="pickCaisseTempClient('${cl.ID_Client}')">
+      <div>
+        <div class="name">${cl.Prenom || ''} ${cl.Nom || ''}</div>
+        <div class="meta">${cl.Telephone || ''}</div>
+      </div>
+      <div>
+        ${adresseComplete ? `<div class="meta">${adresseComplete}</div>` : ''}
+        ${cl.Email ? `<div class="meta">${cl.Email}</div>` : ''}
+      </div>
+      <div>
+        ${animauxTexte ? `<div class="meta">🐾 ${animauxTexte}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openCaisseClientModal(){
+  caisseTempClientId = null;
+  caisseModalFilteredList = [];
+  document.getElementById('caisseModalSearch').value = '';
+  renderCaisseModalClientList(caisseModalFilteredList);
+  document.getElementById('overlayCaisseClient').classList.add('show');
+}
+
+function pickCaisseTempClient(idClient){
+  caisseTempClientId = (caisseTempClientId === idClient) ? null : idClient;
+  renderCaisseModalClientList(caisseModalFilteredList);
+}
+
+document.getElementById('caisseModalSearch').addEventListener('input', (e) => {
+  const q = e.target.value.trim().toLowerCase();
+  caisseModalFilteredList = !q ? [] : clients.filter(c =>
+    (c.Nom || '').toLowerCase().includes(q) ||
+    (c.Prenom || '').toLowerCase().includes(q) ||
+    (c.Adresse || '').toLowerCase().includes(q)
+  );
+  renderCaisseModalClientList(caisseModalFilteredList);
+});
+
+document.getElementById('btnCancelCaisseClient').addEventListener('click', () => {
+  document.getElementById('overlayCaisseClient').classList.remove('show');
+  setActiveTabOnly('prestation');
+});
+
+document.getElementById('btnValidateCaisseClient').addEventListener('click', () => {
+  if (caisseTempClientId){
+    fillCaisseClientCard(caisseTempClientId);
+  }
+  document.getElementById('overlayCaisseClient').classList.remove('show');
+  selectCaisseTab('prestation');
+});
+
+// ---------- Modal Prestation ----------
+let caisseTempPrestation = null;
+
+function renderPrestationPickList(){
+  const prestations = parametres.filter(p => p.Type === 'Prestation');
+  const container = document.getElementById('prestationPickList');
+
+  if (!prestations.length){
+    container.innerHTML = '<div class="meta" style="color:var(--ink-soft);font-size:0.85rem;">Aucune prestation configurée (menu Paramètres).</div>';
+    return;
+  }
+
+  container.innerHTML = prestations.map(p => `
+    <div class="prestation-pick-card ${caisseTempPrestation && String(caisseTempPrestation.id) === String(p.ID) ? 'selected' : ''}" onclick="pickCaissePrestation('${p.ID}')">
+      <span class="p-name">${p.Valeur}</span>
+      <span class="p-price">${p.Prix ? Number(p.Prix).toFixed(2) + ' €' : '—'}</span>
+    </div>
+  `).join('');
+}
+
+function openCaissePrestationModal(){
+  caisseTempPrestation = null;
+  renderPrestationPickList();
+  document.getElementById('overlayCaissePrestation').classList.add('show');
+}
+
+function pickCaissePrestation(id){
+  const p = parametres.find(x => String(x.ID) === String(id) && x.Type === 'Prestation');
+  if (!p) return;
+  caisseTempPrestation = (caisseTempPrestation && String(caisseTempPrestation.id) === String(id))
+    ? null
+    : { id: p.ID, Valeur: p.Valeur, Prix: Number(p.Prix) || 0 };
+  renderPrestationPickList();
+}
+
+document.getElementById('btnCancelPrestation').addEventListener('click', () => {
+  document.getElementById('overlayCaissePrestation').classList.remove('show');
+});
+
+document.getElementById('btnValidatePrestation').addEventListener('click', () => {
+  if (!caisseTempPrestation){
+    document.getElementById('overlayCaissePrestation').classList.remove('show');
+    return;
+  }
+
+  if (caisseTempPrestation.Valeur.trim().toLowerCase() === 'divers'){
+    document.getElementById('overlayCaissePrestation').classList.remove('show');
+    openDiversModal();
+    return;
+  }
+
+  cart.push({ Type: 'Prestation', Libelle: caisseTempPrestation.Valeur, Prix: caisseTempPrestation.Prix, Quantite: 1, Animal: getDefaultAnimalForCart() });
+  renderCart();
+  document.getElementById('overlayCaissePrestation').classList.remove('show');
+});
+
+// ---------- Modal detail Divers ----------
+function openDiversModal(){
+  document.getElementById('diversLibelle').value = '';
+  document.getElementById('diversPrix').value = '';
+  document.getElementById('overlayDivers').classList.add('show');
+}
+
+document.getElementById('btnCancelDivers').addEventListener('click', () => {
+  document.getElementById('overlayDivers').classList.remove('show');
+});
+
+document.getElementById('btnValidateDivers').addEventListener('click', () => {
+  const libelle = document.getElementById('diversLibelle').value.trim();
+  const prix = parseFloat(document.getElementById('diversPrix').value) || 0;
+
+  if (!libelle){ toast('Entre un libellé'); return; }
+
+  cart.push({ Type: 'Prestation', Libelle: `Divers - ${libelle}`, Prix: prix, Quantite: 1, Animal: getDefaultAnimalForCart() });
+  renderCart();
+  document.getElementById('overlayDivers').classList.remove('show');
+});
+
+// ---------- Modal Autre (vente de produit) ----------
+function openAutreModal(){
+  document.getElementById('autreLibelle').value = '';
+  document.getElementById('autrePrix').value = '';
+  document.getElementById('overlayAutre').classList.add('show');
+}
+
+document.getElementById('btnCancelAutre').addEventListener('click', () => {
+  document.getElementById('overlayAutre').classList.remove('show');
+});
+
+document.getElementById('btnValidateAutre').addEventListener('click', () => {
+  const libelle = document.getElementById('autreLibelle').value.trim();
+  const prix = parseFloat(document.getElementById('autrePrix').value) || 0;
+
+  if (!libelle){ toast('Entre un libellé'); return; }
+
+  cart.push({ Type: 'Autre', Libelle: libelle, Prix: prix, Quantite: 1, Animal: getDefaultAnimalForCart() });
+  renderCart();
+  document.getElementById('overlayAutre').classList.remove('show');
+});
+
+// ---------- Encaissement ----------
+let paiementRemaining = 0;
+let paiementLignesFinal = [];
+let paiementModeActuel = '';
+
+function openPaiementModal(){
+  if (!cart.length){
+    bigAlert('Le panier est vide, ajoute au moins une prestation ou un article avant d\'encaisser.');
+    selectCaisseTab('prestation');
+    return;
+  }
+  paiementRemaining = cart.reduce((sum, i) => sum + (computeFinalPrice(i) * i.Quantite), 0);
+  paiementLignesFinal = [];
+  document.getElementById('paiementResteVal').textContent = paiementRemaining.toFixed(2) + ' €';
+  document.getElementById('overlayPaiementMode').classList.add('show');
+}
+
+function choisirModePaiement(mode){
+  paiementModeActuel = mode;
+  document.getElementById('overlayPaiementMode').classList.remove('show');
+  document.getElementById('paiementMontantTitre').textContent = mode === 'Especes' ? 'Espèces' : mode;
+  document.getElementById('paiementMontantInput').value = paiementRemaining.toFixed(2);
+  document.getElementById('overlayPaiementMontant').classList.add('show');
+}
+
+document.getElementById('btnCancelPaiementMode').addEventListener('click', () => {
+  document.getElementById('overlayPaiementMode').classList.remove('show');
+  paiementRemaining = 0;
+  paiementLignesFinal = [];
+  setActiveTabOnly('prestation');
+});
+
+document.getElementById('btnRetourModePaiement').addEventListener('click', () => {
+  document.getElementById('overlayPaiementMontant').classList.remove('show');
+  document.getElementById('paiementResteVal').textContent = paiementRemaining.toFixed(2) + ' €';
+  document.getElementById('overlayPaiementMode').classList.add('show');
+});
+
+document.getElementById('btnValiderMontantPaiement').addEventListener('click', async () => {
+  const montant = parseFloat(document.getElementById('paiementMontantInput').value) || 0;
+
+  if (montant <= 0){ toast('Entre un montant'); return; }
+
+  if (paiementModeActuel !== 'Especes' && montant > paiementRemaining + 0.001){
+    toast('Le montant ne peut pas dépasser le reste à régler pour ce mode de paiement');
+    return;
+  }
+
+  const applique = paiementModeActuel === 'Especes' ? Math.min(montant, paiementRemaining) : montant;
+  const rendu = paiementModeActuel === 'Especes' ? Math.max(0, montant - paiementRemaining) : 0;
+
+  paiementLignesFinal.push({ type: paiementModeActuel, montant: applique, rendu });
+  paiementRemaining = Math.round((paiementRemaining - applique) * 100) / 100;
+
+  document.getElementById('overlayPaiementMontant').classList.remove('show');
+
+  if (rendu > 0){
+    bigAlert(`Rendu à donner : ${rendu.toFixed(2)} €`);
+  }
+
+  if (paiementRemaining > 0.001){
+    document.getElementById('paiementResteVal').textContent = paiementRemaining.toFixed(2) + ' €';
+    document.getElementById('overlayPaiementMode').classList.add('show');
+  } else {
+    await finaliserVente();
+  }
+});
+
+async function finaliserVente(){
+  const totalRendu = paiementLignesFinal.reduce((sum, l) => sum + (l.rendu || 0), 0);
+  const totalDu = paiementLignesFinal.reduce((sum, l) => sum + (l.montant || 0), 0);
+
+  const moyenLabel = paiementLignesFinal.map(l => {
+    const label = l.type === 'Especes' ? 'Espèces' : l.type;
+    return `${label} ${l.montant.toFixed(2)}€`;
+  }).join(' + ');
+
+  const cl = caisseCurrentClientId ? clients.find(c => c.ID_Client === caisseCurrentClientId) : null;
+
+  const data = {
+    ID_Client: cl ? cl.ID_Client : '',
+    Client_Nom: cl ? `${cl.Prenom || ''} ${cl.Nom || ''}`.trim() : '',
+    Total: totalDu,
+    Moyen_Paiement: moyenLabel,
+    Rendu_Monnaie: totalRendu,
+    Lignes: cart.map(item => ({
+      Type: item.Type,
+      Libelle: item.Libelle,
+      Prix: computeFinalPrice(item),
+      Quantite: item.Quantite,
+      Animal: item.Animal || ''
+    }))
+  };
+
+  toast('Encaissement...');
+  const res = await apiPost('addVente', data);
+  if (res.error){ toast('Erreur : ' + res.error); return; }
+
+  toast('Vente enregistrée ✓');
+
+  cart = [];
+  paiementLignesFinal = [];
+  paiementRemaining = 0;
+  dissocierCaisseClient();
+  setActiveTabOnly('prestation');
+}
+
+function fillCaisseClientCard(idClient){
+  const cl = clients.find(c => c.ID_Client === idClient);
+  if (!cl) return;
+
+  caisseCurrentClientId = idClient;
+
+  const adresseComplete = [cl.Adresse, [cl.Code_Postal, cl.Commune].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+  const animaux = animauxParClient[idClient] || [];
+
+  document.getElementById('caisseClientNom').textContent = 'Nom : ' + (cl.Nom || '—');
+  document.getElementById('caisseClientPrenom').textContent = 'Prénom : ' + (cl.Prenom || '—');
+  document.getElementById('caisseClientTel').textContent = 'Téléphone : ' + (cl.Telephone || '—');
+  document.getElementById('caisseClientEmail').textContent = 'Email : ' + (cl.Email || '—');
+  document.getElementById('caisseClientAdresse').textContent = 'Adresse : ' + (adresseComplete || '—');
+  document.getElementById('caisseClientDateNaissance').textContent = 'Date de naissance : ' + (cl.Date_Naissance ? formatDateFR(cl.Date_Naissance) : '—');
+  document.getElementById('caisseClientAnimaux').textContent = animaux.length
+    ? animaux.map(a => `${a.Nom_Animal} (${a.Espece})`).join(', ')
+    : '—';
+
+  updateFideliteDisplay(idClient);
+}
+
+async function updateFideliteDisplay(idClient){
+  const cl = clients.find(c => c.ID_Client === idClient);
+  const box = document.getElementById('caisseFideliteBox');
+  if (!cl){ box.innerHTML = ''; return; }
+
+  const ventes = await apiGet('getVentes', { id_client: idClient });
+  const visites = ventes.length;
+  const recompensesUtilisees = parseInt(cl.Recompenses_Utilisees, 10) || 0;
+  const progres = visites - (recompensesUtilisees * 10);
+  const eligible = progres >= 10;
+
+  const last10 = ventes.slice(-10);
+  const panierMoyen = last10.length
+    ? last10.reduce((sum, v) => sum + (parseFloat(v.Total) || 0), 0) / last10.length
+    : 0;
+
+  box.innerHTML = `
+    <div class="fidelite-line">Fidélité : ${Math.min(progres, 10)}/10 visites</div>
+    ${eligible ? `
+      <div class="fidelite-banner">
+        🎉 Récompense fidélité disponible<br>
+        Panier moyen (10 dern. ventes) : ${panierMoyen.toFixed(2)} €
+        <button class="btn btn-primary btn-small" style="margin-top:8px;width:100%;" onclick="openFideliteModal('${idClient}')">Utiliser la fidélité</button>
+      </div>
+    ` : ''}
+  `;
+}
+
+// ---------- Remise fidelite ----------
+let caisseFideliteClientId = null;
+
+function openFideliteModal(idClient){
+  caisseFideliteClientId = idClient;
+  document.getElementById('fideliteType').value = 'montant';
+  document.getElementById('fideliteValeur').value = '';
+  document.getElementById('overlayFidelite').classList.add('show');
+}
+
+document.getElementById('btnCancelFidelite').addEventListener('click', () => {
+  document.getElementById('overlayFidelite').classList.remove('show');
+});
+
+document.getElementById('btnValidateFidelite').addEventListener('click', async () => {
+  const idClient = caisseFideliteClientId;
+  if (!idClient) return;
+
+  const type = document.getElementById('fideliteType').value;
+  const val = parseFloat(document.getElementById('fideliteValeur').value) || 0;
+
+  if (!val){ toast('Entre une valeur'); return; }
+
+  const totalActuel = cart.reduce((sum, i) => sum + (computeFinalPrice(i) * i.Quantite), 0);
+  const montantRemise = type === 'pourcentage' ? (totalActuel * val / 100) : val;
+  const libelleRemise = type === 'pourcentage' ? `Remise fidélité (-${val}%)` : `Remise fidélité (-${val.toFixed(2)} €)`;
+
+  cart.push({ Type: 'Remise', Libelle: libelleRemise, Prix: -Math.abs(montantRemise), Quantite: 1, Animal: '' });
+  renderCart();
+
+  toast('Mise à jour de la fidélité...');
+  const res = await apiPost('incrementRecompense', { ID_Client: idClient });
+  if (res.error){ toast('Erreur : ' + res.error); }
+
+  const cl = clients.find(c => c.ID_Client === idClient);
+  if (cl && res.recompenses !== undefined){ cl.Recompenses_Utilisees = res.recompenses; }
+
+  document.getElementById('overlayFidelite').classList.remove('show');
+  toast('Remise fidélité appliquée ✓');
+  updateFideliteDisplay(idClient);
+});
+
+function dissocierCaisseClient(){
+  caisseCurrentClientId = null;
+  cart = [];
+  renderCart();
+  document.getElementById('caisseClientNom').textContent = 'Nom : —';
+  document.getElementById('caisseClientPrenom').textContent = 'Prénom : —';
+  document.getElementById('caisseClientTel').textContent = 'Téléphone : —';
+  document.getElementById('caisseClientEmail').textContent = 'Email : —';
+  document.getElementById('caisseClientAdresse').textContent = 'Adresse : —';
+  document.getElementById('caisseClientDateNaissance').textContent = 'Date de naissance : —';
+  document.getElementById('caisseClientAnimaux').textContent = '—';
+  document.getElementById('caisseFideliteBox').innerHTML = '';
+}
+
+document.getElementById('btnDissocierClient').addEventListener('click', dissocierCaisseClient);
+
+function updateHeaderDateTime(){
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  document.getElementById('headerDateTime').textContent = `${dateStr} — ${timeStr}`;
+}
+
+updateHeaderDateTime();
+setInterval(updateHeaderDateTime, 60000);
+
+// ---------- Notes ----------
+function formatDateHeureFR(d){
+  const date = new Date(d);
+  if (isNaN(date.getTime())) return '';
+  return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) +
+    ' à ' + date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+async function loadNotes(){
+  const notes = await apiGet('getNotes');
+  notesCache = notes || [];
+  renderNotesList(notesCache);
+}
+
+function renderNotesList(notes){
+  const container = document.getElementById('notesList');
+  if (!notes.length){
+    container.innerHTML = '<div class="meta" style="color:var(--ink-soft);font-size:0.85rem;">Aucune note pour le moment.</div>';
+    return;
+  }
+
+  const triees = notes.slice().sort((a, b) => new Date(b.Date) - new Date(a.Date));
+
+  container.innerHTML = triees.map(n => `
+    <div class="note-card">
+      <div class="note-header">
+        <div>
+          <div class="note-date">${formatDateHeureFR(n.Date)}</div>
+          <div class="note-contenu">${n.Contenu}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+          <button class="btn-delete" onclick="deleteNoteItem('${n.ID_Note}')">✕</button>
+          <button class="btn btn-ghost btn-small" onclick="editNoteItem('${n.ID_Note}')">Modifier</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+let notesCache = [];
+
+function editNoteItem(idNote){
+  const note = notesCache.find(n => n.ID_Note === idNote);
+  if (!note) return;
+
+  document.getElementById('noteEditId').value = note.ID_Note;
+  document.getElementById('noteContenu').value = note.Contenu;
+  document.getElementById('noteFormTitle').textContent = 'Modifier la note';
+  document.getElementById('btnAddNote').textContent = 'Enregistrer les modifications';
+  document.getElementById('noteContenu').focus();
+}
+
+function resetNoteForm(){
+  document.getElementById('noteEditId').value = '';
+  document.getElementById('noteContenu').value = '';
+  document.getElementById('noteFormTitle').textContent = 'Nouvelle note';
+  document.getElementById('btnAddNote').textContent = '+ Ajouter';
+}
+
+document.getElementById('btnAddNote').addEventListener('click', async () => {
+  const contenu = document.getElementById('noteContenu').value.trim();
+  if (!contenu){ toast('Écris quelque chose avant d\'ajouter'); return; }
+
+  const editId = document.getElementById('noteEditId').value;
+
+  if (editId){
+    toast('Enregistrement...');
+    const res = await apiPost('updateNote', { ID_Note: editId, Contenu: contenu });
+    if (res.error){ toast('Erreur : ' + res.error); return; }
+
+    resetNoteForm();
+    toast('Note modifiée ✓');
+    loadNotes();
+  } else {
+    toast('Ajout...');
+    const res = await apiPost('addNote', { Contenu: contenu });
+    if (res.error){ toast('Erreur : ' + res.error); return; }
+
+    document.getElementById('noteContenu').value = '';
+    toast('Note ajoutée ✓');
+    loadNotes();
+  }
+});
+
+async function deleteNoteItem(idNote){
+  if (!confirm('Supprimer cette note ?')) return;
+
+  toast('Suppression...');
+  const res = await apiPost('deleteNote', { ID_Note: idNote });
+  if (res.error){ toast('Erreur : ' + res.error); return; }
+
+  toast('Supprimée ✓');
+  loadNotes();
+}
+
+loadAll().then(() => showView('caisse'));
 </script>
 </body>
 </html>
