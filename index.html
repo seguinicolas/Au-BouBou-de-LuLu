@@ -1387,9 +1387,13 @@ async function deleteAnimalItem(idAnimal, idClient){
 
   toast('Suppression...');
   const res = await apiPost('deleteAnimal', { ID_Animal: idAnimal });
-  if (res.error){ toast('Erreur : ' + res.error); return; }
 
-  toast('Supprimé ✓');
+  if (res.error){
+    toast('Suppression incertaine, vérification...');
+  } else {
+    toast('Supprimé ✓');
+  }
+
   await loadAll();
   document.getElementById(`card-${idClient}`).classList.add('open');
   renderCardBody(idClient);
@@ -1521,9 +1525,13 @@ async function deleteParamItem(id){
 
   toast('Suppression...');
   const res = await apiPost('deleteParametre', { ID: id });
-  if (res.error){ toast('Erreur : ' + res.error); return; }
 
-  toast('Supprimé ✓');
+  if (res.error){
+    toast('Suppression incertaine, vérification...');
+  } else {
+    toast('Supprimé ✓');
+  }
+
   await reloadParametres();
   renderParamList();
 }
@@ -2154,9 +2162,13 @@ async function deleteNoteItem(idNote){
 
   toast('Suppression...');
   const res = await apiPost('deleteNote', { ID_Note: idNote });
-  if (res.error){ toast('Erreur : ' + res.error); return; }
 
-  toast('Supprimée ✓');
+  if (res.error){
+    toast('Suppression incertaine, vérification...');
+  } else {
+    toast('Supprimée ✓');
+  }
+
   loadNotes();
 }
 
