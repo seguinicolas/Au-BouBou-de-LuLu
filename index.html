@@ -1014,18 +1014,26 @@ let parametres = [];
 // ---------- API helpers ----------
 async function apiGet(action, params){
   params = params || {};
-  const qs = new URLSearchParams({action, ...params}).toString();
-  const res = await fetch(`${API_URL}?${qs}`);
-  return res.json();
+  const qs = new URLSearchParams({action, _ts: Date.now(), ...params}).toString();
+  try {
+    const res = await fetch(`${API_URL}?${qs}`);
+    return await res.json();
+  } catch (err){
+    return { error: 'Connexion impossible (' + action + ') : ' + err.message };
+  }
 }
 
 async function apiPost(action, data){
-  const res = await fetch(API_URL, {
-    method:'POST',
-    headers:{'Content-Type':'text/plain;charset=utf-8'},
-    body: JSON.stringify({action, data})
-  });
-  return res.json();
+  try {
+    const res = await fetch(API_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({action, data})
+    });
+    return await res.json();
+  } catch (err){
+    return { error: 'Connexion impossible (' + action + ') : ' + err.message };
+  }
 }
 
 function toast(msg){
@@ -1049,6 +1057,15 @@ function closeBigAlert(){
 // ---------- Chargement initial ----------
 async function loadAll(){
   const initData = await apiGet('getInitData');
+
+  if (initData.error){
+    bigAlert('Erreur de chargement : ' + initData.error + '\nRecharge la page pour réessayer.');
+    clients = [];
+    parametres = [];
+    animauxParClient = {};
+    renderClientList(clients);
+    return;
+  }
 
   clients = initData.clients || [];
   parametres = initData.parametres || [];
@@ -1474,7 +1491,9 @@ function renderParamList(){
 }
 
 async function reloadParametres(){
-  parametres = await apiGet('getParametres');
+  const res = await apiGet('getParametres');
+  if (res && res.error){ toast('Erreur : ' + res.error); return; }
+  parametres = res || [];
 }
 
 async function addParamItem(){
@@ -1947,6 +1966,11 @@ async function updateFideliteDisplay(idClient){
   if (!cl){ box.innerHTML = ''; return; }
 
   const ventes = await apiGet('getVentes', { id_client: idClient });
+  if (ventes && ventes.error){
+    box.innerHTML = `<div class="fidelite-line" style="color:#B0453B;">Fidélité indisponible (${ventes.error})</div>`;
+    return;
+  }
+
   const visites = ventes.length;
   const recompensesUtilisees = parseInt(cl.Recompenses_Utilisees, 10) || 0;
   const progres = visites - (recompensesUtilisees * 10);
@@ -2047,6 +2071,10 @@ function formatDateHeureFR(d){
 
 async function loadNotes(){
   const notes = await apiGet('getNotes');
+  if (notes && notes.error){
+    document.getElementById('notesList').innerHTML = `<div class="meta" style="color:#B0453B;font-size:0.85rem;">Erreur : ${notes.error}</div>`;
+    return;
+  }
   notesCache = notes || [];
   renderNotesList(notesCache);
 }
