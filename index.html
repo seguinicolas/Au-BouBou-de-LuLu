@@ -70,6 +70,7 @@
   }
 
   main{ max-width:640px; margin:0 auto; padding:16px; }
+  main.main-wide{ max-width:1450px; margin:0 auto 0 0; }
 
   .toolbar{
     display:flex;
@@ -479,6 +480,386 @@
     padding:14px 16px;
   }
 
+  /* ---------- Agenda / mini-calendrier ---------- */
+  .caisse-layout{
+    display:flex;
+    gap:16px;
+    align-items:flex-start;
+  }
+  .caisse-sidebar{
+    width:350px;
+    flex-shrink:0;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .caisse-main{
+    flex:1;
+    min-width:0;
+  }
+  @media (max-width: 900px){
+    .caisse-layout{ flex-direction:column; }
+    .caisse-sidebar{ width:100%; }
+  }
+
+  .mini-calendar-card{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:14px 16px;
+  }
+  .mini-cal-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:10px;
+  }
+  .mini-cal-header .mc-title{
+    font-weight:800;
+    font-size:0.92rem;
+    text-transform:capitalize;
+  }
+  .mini-cal-header button{
+    background:none;
+    border:none;
+    font-size:1.15rem;
+    color:var(--ink-soft);
+    cursor:pointer;
+    padding:2px 8px;
+    line-height:1;
+  }
+  .mini-cal-grid{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:2px;
+    text-align:center;
+  }
+  .mini-cal-dow{
+    font-size:0.66rem;
+    color:var(--ink-soft);
+    font-weight:700;
+    padding:2px 0 6px;
+  }
+  .mini-cal-day{
+    position:relative;
+    font-size:0.8rem;
+    padding:6px 0;
+    border-radius:50%;
+    cursor:pointer;
+    color:var(--ink);
+  }
+  .mini-cal-day.other-month{ color:var(--line); cursor:default; }
+  .mini-cal-day.today{ font-weight:800; color:var(--sage-dark); }
+  .mini-cal-day.selected{ background:var(--sage); color:var(--white); }
+  .mini-cal-day .dot{
+    position:absolute;
+    bottom:1px;
+    left:50%;
+    transform:translateX(-50%);
+    width:4px;
+    height:4px;
+    border-radius:50%;
+    background:var(--apricot);
+  }
+  .mini-cal-day.selected .dot{ background:var(--white); }
+
+  .rdv-day-card{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:14px 16px;
+  }
+
+  .rdv-untimed-list{ margin-bottom:10px; }
+  .rdv-untimed-item{
+    display:flex;
+    align-items:flex-start;
+    gap:8px;
+    padding:6px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .rdv-untimed-item:last-child{ border-bottom:none; }
+  .rdv-untimed-item .rdv-client{ font-size:0.85rem; font-weight:700; }
+  .rdv-untimed-item .rdv-detail{ font-size:0.76rem; color:var(--ink-soft); }
+
+  .rdv-timeline-scroll{
+    position:relative;
+    max-height:480px;
+    overflow-y:auto;
+    border-top:1px solid var(--line);
+  }
+  .rdv-timeline-wrap{
+    position:relative;
+  }
+  .rdv-timeline-hourline{
+    position:absolute;
+    left:0;
+    right:0;
+    border-top:1px solid var(--line);
+  }
+  .rdv-timeline-hourlabel{
+    position:absolute;
+    left:0;
+    top:-7px;
+    width:38px;
+    font-size:0.66rem;
+    color:var(--ink-soft);
+    background:var(--white);
+    padding-right:4px;
+  }
+  .rdv-timeline-block{
+    position:absolute;
+    left:44px;
+    right:4px;
+    border-radius:8px;
+    padding:4px 8px;
+    color:var(--white);
+    font-size:0.74rem;
+    line-height:1.25;
+    overflow:hidden;
+    cursor:default;
+    box-shadow:0 1px 3px rgba(0,0,0,0.12);
+  }
+  .rdv-timeline-block .rdv-block-time{ font-weight:800; font-size:0.7rem; opacity:0.95; }
+  .rdv-timeline-block .rdv-block-client{ font-weight:700; }
+  .rdv-timeline-block .rdv-block-detail{ opacity:0.9; font-size:0.7rem; }
+  .rdv-timeline-block .rdv-block-delete{
+    position:absolute;
+    top:2px;
+    right:4px;
+    background:none;
+    border:none;
+    color:var(--white);
+    opacity:0.85;
+    font-size:0.85rem;
+    cursor:pointer;
+    line-height:1;
+    padding:2px;
+  }
+  .rdv-timeline-now{
+    position:absolute;
+    left:38px;
+    right:4px;
+    height:0;
+    border-top:2px solid #D64545;
+    z-index:2;
+  }
+  .rdv-timeline-now::before{
+    content:'';
+    position:absolute;
+    left:-5px;
+    top:-4px;
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#D64545;
+  }
+  .rdv-item{
+    display:flex;
+    align-items:flex-start;
+    padding:8px 0;
+    border-bottom:1px solid var(--line);
+    gap:8px;
+  }
+  .rdv-item:last-child{ border-bottom:none; }
+  .rdv-item .rdv-heure{
+    font-weight:800;
+    color:var(--sage-dark);
+    font-size:0.82rem;
+    min-width:40px;
+  }
+  .rdv-item .rdv-info{ flex:1; min-width:0; }
+  .rdv-item .rdv-client{ font-size:0.85rem; font-weight:700; }
+  .rdv-item .rdv-detail{ font-size:0.76rem; color:var(--ink-soft); }
+  .rdv-client-result{
+    padding:8px 10px;
+    cursor:pointer;
+    border-bottom:1px solid var(--line);
+    font-size:0.85rem;
+  }
+  .rdv-client-result:last-child{ border-bottom:none; }
+  .rdv-client-result:hover{ background:var(--cream); }
+
+  /* ---------- Agenda plein ecran (menu hamburger) ---------- */
+  .agenda-layout{
+    display:flex;
+    gap:20px;
+    align-items:flex-start;
+  }
+  .agenda-sidebar{
+    width:380px;
+    flex-shrink:0;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .agenda-main{
+    flex:1;
+    min-width:0;
+  }
+  @media (max-width: 900px){
+    .agenda-layout{ flex-direction:column; }
+    .agenda-sidebar{ width:100%; }
+  }
+
+  /* ---------- Analyse ---------- */
+  .analyse-subnav{
+    display:flex;
+    gap:8px;
+    margin-bottom:16px;
+    flex-wrap:wrap;
+  }
+  .analyse-subnav-btn{
+    padding:8px 16px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    background:var(--white);
+    color:var(--ink-soft);
+    font-weight:700;
+    font-size:0.85rem;
+    cursor:pointer;
+  }
+  .analyse-subnav-btn.active{
+    background:var(--sage);
+    border-color:var(--sage);
+    color:var(--white);
+  }
+  .analyse-recap-card{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px;
+    margin-bottom:16px;
+  }
+  .analyse-recap-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:10px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .analyse-recap-row:last-child{ border-bottom:none; }
+  .analyse-recap-row .arr-label{ font-weight:700; }
+  .analyse-recap-row .arr-count{ color:var(--ink-soft); font-size:0.82rem; margin-left:8px; }
+  .analyse-recap-row .arr-total{ font-weight:800; color:var(--sage-dark); }
+  .analyse-detail-card{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px;
+  }
+  .analyse-table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:0.85rem;
+  }
+  .analyse-table th{
+    text-align:left;
+    padding:8px 6px;
+    border-bottom:2px solid var(--line);
+    color:var(--ink-soft);
+    font-size:0.72rem;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+  }
+  .analyse-table td{
+    padding:8px 6px;
+    border-bottom:1px solid var(--line);
+  }
+  .analyse-table tr:last-child td{ border-bottom:none; }
+  .analyse-table td.amt{ text-align:right; font-weight:700; white-space:nowrap; }
+
+  /* ---------- Cloture (3 colonnes, sans scroll) ---------- */
+  .cloture-layout{
+    display:flex;
+    gap:18px;
+    align-items:flex-start;
+  }
+  .cloture-col{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    min-width:0;
+    flex:1;
+  }
+  .analyse-table-compact th,
+  .analyse-table-compact td{
+    padding:4px 6px;
+  }
+  @media (max-width: 1000px){
+    .cloture-layout{ flex-direction:column; }
+  }
+  .rdv-no-time-list{ margin-bottom:10px; }
+  .rdv-timeline-wrap{
+    position:relative;
+    overflow-y:auto;
+    overflow-x:hidden;
+  }
+  .rdv-timeline{
+    position:relative;
+    margin-left:46px;
+    border-left:1px solid var(--line);
+  }
+  .rdv-now-line{
+    position:absolute;
+    left:0;
+    right:0;
+    height:0;
+    border-top:2px solid #D8433A;
+    z-index:6;
+    pointer-events:none;
+  }
+  .rdv-now-line::before{
+    content:'';
+    position:absolute;
+    left:-5px;
+    top:-4px;
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#D8433A;
+  }
+  .rdv-timeline-hour{
+    position:relative;
+    border-top:1px solid var(--line);
+    box-sizing:border-box;
+  }
+  .rdv-timeline-hour:first-child{ border-top:none; }
+  .rdv-timeline-hour .hour-label{
+    position:absolute;
+    left:-46px;
+    top:-7px;
+    width:40px;
+    text-align:right;
+    font-size:0.66rem;
+    color:var(--ink-soft);
+  }
+  .rdv-block{
+    position:absolute;
+    border-radius:8px;
+    padding:3px 8px;
+    color:var(--white);
+    overflow:hidden;
+    box-shadow:0 1px 3px rgba(0,0,0,0.18);
+    box-sizing:border-box;
+  }
+  .rdv-block .rb-heure{ font-size:0.68rem; font-weight:800; opacity:0.95; }
+  .rdv-block .rb-client{ font-size:0.76rem; font-weight:700; line-height:1.15; }
+  .rdv-block .rb-detail{ font-size:0.68rem; opacity:0.9; line-height:1.15; }
+  .rdv-block .rb-delete{
+    position:absolute;
+    top:2px;
+    right:4px;
+    background:none;
+    border:none;
+    color:var(--white);
+    opacity:0.85;
+    cursor:pointer;
+    font-size:0.72rem;
+    padding:2px 4px;
+    line-height:1;
+  }
+
   .header-label{
     font-size:0.68rem;
     font-weight:800;
@@ -660,6 +1041,62 @@
     justify-content:center;
     padding:0;
   }
+  /* ---------- Impression (bouton "Cloturer la caisse") ---------- */
+  @page{ size: A4 landscape; margin: 8mm; }
+
+  @media print{
+    body{ padding-bottom:0; background:var(--white); font-size:0.72rem; }
+    .hamburger-btn, .nav-overlay, .bottom-tabbar, .no-print{ display:none !important; }
+    main{ max-width:none !important; margin:0 !important; padding:0 !important; }
+
+    .header-main{ box-shadow:none; padding:8px 14px !important; min-height:0 !important; }
+    .header-main .paw{ width:22px !important; height:22px !important; }
+    .header-main h1{ font-size:1rem !important; margin:0 !important; }
+    .header-main p{ display:none !important; }
+    .header-datetime{ font-size:0.75rem !important; }
+
+    #viewCloture .field-row{ margin-bottom:4px; }
+    #viewCloture .field-row label{ font-size:0.62rem; margin-bottom:2px; }
+    #viewCloture input{ padding:2px 4px !important; font-size:0.72rem !important; }
+
+    .cloture-layout{ flex-wrap:nowrap !important; gap:8px; align-items:flex-start; }
+    .cloture-col{ flex:1 1 0; gap:6px; }
+
+    .analyse-recap-card, .analyse-detail-card{
+      break-inside:avoid;
+      box-shadow:none;
+      padding:8px 10px;
+      margin-bottom:0;
+    }
+    .header-label{ font-size:0.62rem; margin-bottom:4px !important; }
+    .analyse-recap-row{ padding:4px 0; }
+    .arr-label{ font-size:0.72rem; }
+    .arr-total{ font-size:0.78rem; }
+    .arr-count{ font-size:0.65rem; }
+
+    .analyse-table th, .analyse-table td{ padding:2px 4px; font-size:0.68rem; }
+    .analyse-table-compact th, .analyse-table-compact td{ padding:1px 4px; }
+
+    input[type="number"], input[type="date"]{
+      border:none;
+      background:transparent;
+      -webkit-print-color-adjust:exact;
+      print-color-adjust:exact;
+    }
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button{
+      -webkit-appearance:none;
+      margin:0;
+    }
+    #clotureDenomTable input, #clotureDenomTable2 input, .cloture-cheque-input, #clotureCbNombreCompte, #clotureCbMontantCompte{
+      -moz-appearance:textfield;
+      width:44px !important;
+    }
+    #clotureChequeLines .btn-delete{ display:none !important; }
+    #clotureChequeLines button.no-print,
+    .cloture-add-cheque-btn{ display:none !important; }
+    .cloture-spacer{ height:8px !important; }
+  }
 </style>
 </head>
 <body>
@@ -691,13 +1128,15 @@
     <div class="nav-item" id="navClients" onclick="showView('clients')">🐾 Clients</div>
     <div class="nav-item" id="navNotes" onclick="showView('notes')">📝 Notes</div>
     <div class="nav-item" id="navAgenda" onclick="showView('agenda')">📅 Agenda</div>
+    <div class="nav-item" id="navOuverture" onclick="showView('ouverture')">🧾 Ouverture caisse</div>
+    <div class="nav-item" id="navAnalyse" onclick="showView('analyse')">📈 Analyse</div>
     <div class="nav-item" id="navCloture" onclick="showView('cloture')">🔒 Clôture</div>
     <div class="nav-item" id="navStatistique" onclick="showView('statistique')">📊 Statistique</div>
     <div class="nav-item" id="navParametres" onclick="showView('parametres')">⚙️ Paramètres</div>
   </div>
 </div>
 
-<main>
+<main id="mainContainer">
   <div id="viewClients" style="display:none">
     <div class="toolbar">
       <div class="search-wrap">
@@ -730,22 +1169,156 @@
   </div>
 
   <div id="viewAgenda" style="display:none">
-    <div class="empty">
-      <svg class="paw" viewBox="0 0 64 64" fill="currentColor" style="display:block;margin:0 auto 8px">
-        <ellipse cx="32" cy="42" rx="15" ry="12"/><ellipse cx="14" cy="24" rx="7" ry="9"/>
-        <ellipse cx="50" cy="24" rx="7" ry="9"/><ellipse cx="24" cy="12" rx="6" ry="8"/><ellipse cx="40" cy="12" rx="6" ry="8"/>
-      </svg>
-      Agenda — à construire.
+    <div class="agenda-layout">
+      <aside class="agenda-sidebar">
+        <div class="mini-calendar-card"></div>
+        <button class="btn btn-primary" style="width:100%;" onclick="openRdvModal()">+ Nouveau rendez-vous</button>
+      </aside>
+      <div class="agenda-main">
+        <div class="rdv-day-card">
+          <div class="header-label rdv-day-label" style="margin-bottom:8px;">Rendez-vous du jour</div>
+          <div class="rdv-day-list"></div>
+        </div>
+      </div>
     </div>
   </div>
 
+  <div id="viewOuverture" style="display:none">
+    <div class="analyse-detail-card" style="max-width:360px;">
+      <div class="header-label" style="margin-bottom:8px;">Fond de caisse</div>
+      <div class="field-row"><label>Date</label><input type="date" id="ouvertureDateInput" onchange="onOuvertureDateChange()"></div>
+      <div class="field-row"><label>Somme en espèces (€)</label><input type="number" id="ouvertureSommeInput" step="0.01" min="0" placeholder="0.00"></div>
+      <div id="ouvertureStatus" class="meta" style="font-size:0.82rem;color:var(--ink-soft);margin-bottom:10px;"></div>
+      <button class="btn btn-primary" style="width:100%;" onclick="saveOuvertureCaisse()">Enregistrer</button>
+    </div>
+  </div>
+
+  <div id="viewAnalyse" style="display:none">
+    <div class="field-row" style="max-width:220px;margin-bottom:14px;">
+      <label>Date</label>
+      <input type="date" id="analyseDateInput" onchange="onAnalyseDateChange()">
+    </div>
+    <div class="analyse-subnav">
+      <button class="analyse-subnav-btn active" id="analyseSubGenerale" onclick="showAnalyseSub('generale')">Générale</button>
+      <button class="analyse-subnav-btn" id="analyseSubCB" onclick="showAnalyseSub('cb')">CB</button>
+      <button class="analyse-subnav-btn" id="analyseSubCheque" onclick="showAnalyseSub('cheque')">Chèque</button>
+      <button class="analyse-subnav-btn" id="analyseSubEspece" onclick="showAnalyseSub('espece')">Espèces</button>
+      <button class="analyse-subnav-btn" id="analyseSubErreur" onclick="showAnalyseSub('erreur')">Erreur paiement</button>
+    </div>
+    <div id="analyseContent"></div>
+  </div>
+
   <div id="viewCloture" style="display:none">
-    <div class="empty">
-      <svg class="paw" viewBox="0 0 64 64" fill="currentColor" style="display:block;margin:0 auto 8px">
-        <ellipse cx="32" cy="42" rx="15" ry="12"/><ellipse cx="14" cy="24" rx="7" ry="9"/>
-        <ellipse cx="50" cy="24" rx="7" ry="9"/><ellipse cx="24" cy="12" rx="6" ry="8"/><ellipse cx="40" cy="12" rx="6" ry="8"/>
-      </svg>
-      Clôture — à construire.
+    <div style="display:flex;align-items:flex-end;gap:16px;margin-bottom:14px;flex-wrap:wrap;">
+      <div class="field-row" style="max-width:220px;margin-bottom:0;">
+        <label>Date</label>
+        <input type="date" id="clotureDateInput" onchange="onClotureDateChange()">
+      </div>
+      <button class="btn btn-primary no-print" onclick="window.print()">🖨️ Clôturer la caisse (PDF)</button>
+    </div>
+
+    <div class="cloture-layout">
+      <div class="cloture-col" style="flex:1.3;">
+        <div class="analyse-recap-card">
+          <div class="header-label" style="margin-bottom:8px;">Récapitulatif</div>
+          <table class="analyse-table">
+            <thead>
+              <tr><th>Moyen</th><th style="text-align:right;">Théorique</th><th style="text-align:right;">Compté</th><th style="text-align:right;">Dif</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Espèces</td>
+                <td class="amt" id="clotureTheoEspeces">0.00 €</td>
+                <td class="amt" id="clotureCompteEspeces">0.00 €</td>
+                <td class="amt" id="clotureDifEspeces">0.00 €</td>
+              </tr>
+              <tr>
+                <td>Chèque</td>
+                <td class="amt" id="clotureTheoCheque">0.00 €</td>
+                <td class="amt" id="clotureCompteCheque">0.00 €</td>
+                <td class="amt" id="clotureDifCheque">0.00 €</td>
+              </tr>
+              <tr>
+                <td>CB</td>
+                <td class="amt" id="clotureTheoCB">0.00 €</td>
+                <td class="amt" id="clotureCompteCB">0.00 €</td>
+                <td class="amt" id="clotureDifCB">0.00 €</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="analyse-recap-card">
+          <div class="analyse-recap-row" style="border-bottom:none;">
+            <div><span class="arr-label">Nouveau fond de caisse (demain)</span></div>
+            <div class="arr-total" id="clotureNouvelOuverture">0.00 €</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cloture-col">
+        <div class="analyse-recap-card">
+          <div class="analyse-recap-row" style="border-bottom:none;">
+            <div><span class="arr-label">Fond de caisse (ouverture)</span></div>
+            <div class="arr-total" id="clotureFondOuverture">0.00 €</div>
+          </div>
+        </div>
+
+        <div class="analyse-detail-card">
+          <div class="header-label" style="margin-bottom:8px;">Comptage espèces</div>
+          <table class="analyse-table analyse-table-compact" id="clotureDenomTable">
+            <thead>
+              <tr><th>Valeur</th><th style="text-align:center;">Qté</th><th style="text-align:right;">Montant</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+          <div class="analyse-recap-row" style="border-bottom:none;padding-top:8px;">
+            <div class="arr-label">Total espèces comptées</div>
+            <div class="arr-total" id="clotureEspecesComptees">0.00 €</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cloture-col">
+        <div class="analyse-detail-card">
+          <div class="header-label" style="margin-bottom:8px;">Comptage espèces (suite)</div>
+          <table class="analyse-table analyse-table-compact" id="clotureDenomTable2">
+            <thead>
+              <tr><th>Valeur</th><th style="text-align:center;">Qté</th><th style="text-align:right;">Montant</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="cloture-col">
+        <div class="analyse-detail-card">
+          <div class="header-label" style="margin-bottom:8px;">Chèques comptés</div>
+          <div id="clotureChequeLines"></div>
+          <button class="btn btn-ghost btn-small no-print" style="margin-top:6px;" onclick="addClotureChequeLine()">+ Ajouter un chèque</button>
+          <div class="analyse-recap-row" style="border-bottom:none;padding-top:10px;">
+            <div class="arr-label">Total chèques comptés</div>
+            <div class="arr-total" id="clotureChequesComptes">0.00 €</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cloture-col">
+        <div class="analyse-detail-card">
+          <div class="header-label" style="margin-bottom:4px;">Encaissement CB</div>
+          <div class="meta" style="font-size:0.76rem;color:var(--ink-soft);margin-bottom:8px;">Théorique : <span id="clotureNbrCBTheo"></span> encaiss. — <span id="clotureMontantCBTheo">0.00 €</span></div>
+          <div class="field-row"><label>Nombre compté</label><input type="number" id="clotureCbNombreCompte" min="0" step="1" oninput="updateClotureCB()"></div>
+          <div class="field-row"><label>Montant compté (€)</label><input type="number" id="clotureCbMontantCompte" min="0" step="0.01" placeholder="0.00" oninput="updateClotureCB()"></div>
+        </div>
+
+        <div class="cloture-spacer" style="height:24px;"></div>
+
+        <div class="analyse-detail-card">
+          <div class="header-label" style="margin-bottom:8px;">Remises en banque</div>
+          <div class="field-row"><label>Remise espèces (€)</label><input type="number" id="clotureRemiseEspeces" step="0.01" min="0" placeholder="0.00" oninput="updateClotureNouvelOuverture()"></div>
+          <div class="field-row"><label>Remise chèques (€)</label><input type="number" id="clotureRemiseCheque" step="0.01" min="0" placeholder="0.00"></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -770,6 +1343,16 @@
   </div>
 
   <div id="viewCaisse">
+   <div class="caisse-layout">
+    <aside class="caisse-sidebar">
+      <div class="mini-calendar-card" id="miniCalendarCard"></div>
+      <button class="btn btn-primary" style="width:100%;" onclick="openRdvModal()">+ Nouveau rendez-vous</button>
+      <div class="rdv-day-card">
+        <div class="header-label rdv-day-label" style="margin-bottom:8px;" id="rdvDayLabel">Rendez-vous du jour</div>
+        <div class="rdv-day-list" id="rdvDayList"></div>
+      </div>
+    </aside>
+    <div class="caisse-main">
     <div class="caisse-header-row">
       <div class="caisse-client-card">
         <div class="header-label">Client</div>
@@ -798,6 +1381,8 @@
       <div id="cartItems"></div>
       <div id="cartEmpty" class="meta" style="color:var(--ink-soft);font-size:0.85rem;">Panier vide</div>
     </div>
+    </div>
+   </div>
   </div>
 </main>
 
@@ -915,25 +1500,6 @@
   </div>
 </div>
 
-<!-- Modal remise fidelite -->
-<div class="modal-overlay" id="overlayFidelite">
-  <div class="modal">
-    <h2>Utiliser la fidélité</h2>
-    <div class="field-row">
-      <label>Type de remise</label>
-      <select id="fideliteType">
-        <option value="montant">Montant (€)</option>
-        <option value="pourcentage">Pourcentage (%)</option>
-      </select>
-    </div>
-    <div class="field-row"><label>Valeur</label><input id="fideliteValeur" type="number" step="0.5" min="0"></div>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" id="btnCancelFidelite">Annuler</button>
-      <button class="btn btn-primary" id="btnValidateFidelite">Valider</button>
-    </div>
-  </div>
-</div>
-
 <!-- Modal Historique client -->
 <div class="modal-overlay" id="overlayHistorique">
   <div class="modal">
@@ -975,8 +1541,9 @@
 <!-- Modal nouvel animal -->
 <div class="modal-overlay" id="overlayAnimal">
   <div class="modal">
-    <h2>Nouvel animal</h2>
+    <h2 id="animalModalTitle">Nouvel animal</h2>
     <input type="hidden" id="aClientId">
+    <input type="hidden" id="aEditId">
     <div class="field-row"><label>Nom *</label><input id="aNom" type="text"></div>
     <div class="grid2">
       <div class="field-row"><label>Espèce *</label><select id="aEspece"></select></div>
@@ -991,6 +1558,44 @@
     <div class="modal-actions">
       <button class="btn btn-ghost" id="btnCancelAnimal">Annuler</button>
       <button class="btn btn-primary" id="btnSaveAnimal">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal rendez-vous -->
+<div class="modal-overlay" id="overlayRdv">
+  <div class="modal">
+    <h2 id="rdvModalTitle">Nouveau rendez-vous</h2>
+    <input type="hidden" id="rdvEditId">
+    <div class="field-row"><label>Date *</label><input id="rdvDate" type="date"></div>
+    <div class="grid2">
+      <div class="field-row"><label>Heure</label><input id="rdvHeure" type="time"></div>
+      <div class="field-row"><label>Durée (min)</label><input id="rdvDuree" type="number" min="0" step="5" placeholder="Ex : 30"></div>
+    </div>
+    <div class="field-row">
+      <label>Client *</label>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
+        <div class="search-wrap" style="flex:1;margin-bottom:0;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="rdvClientSearch" type="text" placeholder="Rechercher un client...">
+        </div>
+        <button type="button" class="btn btn-ghost btn-small" style="flex-shrink:0;" onclick="openClientModalFromRdv()">+ Client</button>
+      </div>
+      <div id="rdvClientList" style="max-height:26vh;overflow-y:auto;border-radius:10px;"></div>
+      <div id="rdvClientSelected" class="meta" style="font-size:0.82rem;color:var(--sage-dark);font-weight:700;margin-top:4px;"></div>
+    </div>
+    <div class="field-row" id="rdvAnimalRow" style="display:none;">
+      <label>Animal</label>
+      <select id="rdvAnimal"></select>
+    </div>
+    <div class="field-row">
+      <label>Prestation</label>
+      <select id="rdvPrestation"></select>
+    </div>
+    <div class="field-row"><label>Notes</label><textarea id="rdvNotes" rows="2"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btnCancelRdv">Annuler</button>
+      <button class="btn btn-primary" id="btnSaveRdv">Enregistrer</button>
     </div>
   </div>
 </div>
@@ -1010,6 +1615,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbwAub-4OtWsI6pPboX4Rafk
 let clients = [];
 let animauxParClient = {};
 let parametres = [];
+let rendezVous = [];
 
 // ---------- API helpers ----------
 async function apiGet(action, params){
@@ -1062,6 +1668,7 @@ async function loadAll(){
     bigAlert('Erreur de chargement : ' + initData.error + '\nRecharge la page pour réessayer.');
     clients = [];
     parametres = [];
+    rendezVous = [];
     animauxParClient = {};
     renderClientList(clients);
     return;
@@ -1069,6 +1676,7 @@ async function loadAll(){
 
   clients = initData.clients || [];
   parametres = initData.parametres || [];
+  rendezVous = initData.rendezVous || [];
 
   animauxParClient = {};
   (initData.animaux || []).forEach(an => {
@@ -1077,6 +1685,8 @@ async function loadAll(){
   });
 
   renderClientList(clients);
+  renderMiniCalendar();
+  renderRdvDayList();
 }
 
 function especeChipClass(esp){
@@ -1091,6 +1701,1027 @@ function formatDateFR(dateStr){
   if (match) return `${match[3]}/${match[2]}/${match[1]}`;
   return dateStr;
 }
+
+// ============================================
+// ANALYSE — recap et detail des encaissements par moyen de paiement
+// ============================================
+// ============================================
+// OUVERTURE CAISSE — fond de caisse en especes du jour
+// ============================================
+let ouvertureCaisseData = null;
+let ouvertureSelectedDate = null;
+
+async function loadOuvertureCaisse(){
+  if (!ouvertureSelectedDate){
+    ouvertureSelectedDate = todayStr();
+  }
+  document.getElementById('ouvertureDateInput').value = ouvertureSelectedDate;
+
+  const status = document.getElementById('ouvertureStatus');
+  status.textContent = 'Chargement...';
+
+  const res = await apiGet('getOuvertureCaisse');
+  if (res && res.error){
+    status.textContent = 'Erreur : ' + res.error;
+    return;
+  }
+
+  ouvertureCaisseData = res || [];
+  renderOuvertureCaisse();
+}
+
+function renderOuvertureCaisse(){
+  const status = document.getElementById('ouvertureStatus');
+  const sommeInput = document.getElementById('ouvertureSommeInput');
+  if (!ouvertureCaisseData) return;
+
+  const entry = ouvertureCaisseData.find(o => normalizeDateStr(o.Date) === ouvertureSelectedDate);
+
+  if (entry){
+    sommeInput.value = parseFloat(entry.Somme) || 0;
+    status.textContent = `Déjà renseigné pour le ${formatDateFR(ouvertureSelectedDate)} : ${(parseFloat(entry.Somme) || 0).toFixed(2)} € (modifiable)`;
+  } else {
+    sommeInput.value = '';
+    status.textContent = `Pas encore renseigné pour le ${formatDateFR(ouvertureSelectedDate)}.`;
+  }
+}
+
+function onOuvertureDateChange(){
+  const val = document.getElementById('ouvertureDateInput').value;
+  if (!val) return;
+  ouvertureSelectedDate = val;
+  renderOuvertureCaisse();
+}
+
+async function saveOuvertureCaisse(){
+  const somme = parseFloat(document.getElementById('ouvertureSommeInput').value);
+  if (isNaN(somme) || somme < 0){ toast('Renseigne un montant valide'); return; }
+
+  toast('Enregistrement...');
+  const res = await apiPost('setOuvertureCaisse', { Date: ouvertureSelectedDate, Somme: somme });
+  if (res.error){ toast('Erreur : ' + res.error); return; }
+
+  // Met a jour le cache local sans tout recharger
+  if (ouvertureCaisseData){
+    const entry = ouvertureCaisseData.find(o => normalizeDateStr(o.Date) === ouvertureSelectedDate);
+    if (entry){ entry.Somme = somme; }
+    else { ouvertureCaisseData.push({ Date: ouvertureSelectedDate, Somme: somme }); }
+  }
+
+  toast('Fond de caisse enregistré ✓');
+  renderOuvertureCaisse();
+}
+
+// ============================================
+// CLOTURE — comptage de caisse en fin de journee (theorique vs compte)
+// Rien n'est sauvegarde ici : outil de calcul en direct, a resaisir chaque jour.
+// ============================================
+const CLOTURE_DENOMINATIONS = [50, 20, 10, 5, 2, 1, 0.5, 0.2, 0.1, 0.05, 0.02, 0.01];
+
+let clotureSelectedDate = null;
+let clotureVentesAll = null; // cache des ventes de l'annee, filtrees par jour ensuite
+let clotureChequeCounter = 0;
+
+async function loadCloture(){
+  if (!clotureSelectedDate){
+    clotureSelectedDate = todayStr();
+  }
+  document.getElementById('clotureDateInput').value = clotureSelectedDate;
+
+  renderClotureDenomTable();
+  document.getElementById('clotureChequeLines').innerHTML = '';
+  clotureChequeCounter = 0;
+  addClotureChequeLine();
+  document.getElementById('clotureCbNombreCompte').value = '';
+  document.getElementById('clotureCbMontantCompte').value = '';
+
+  const [resVentes, resOuverture] = await Promise.all([
+    apiGet('getVentes'),
+    apiGet('getOuvertureCaisse')
+  ]);
+
+  if (resVentes && !resVentes.error){ clotureVentesAll = resVentes; }
+  if (resOuverture && !resOuverture.error){ ouvertureCaisseData = resOuverture; }
+
+  updateClotureTheorique();
+  updateClotureFondOuverture();
+  updateClotureEspeces();
+  updateClotureCheques();
+}
+
+function onClotureDateChange(){
+  const val = document.getElementById('clotureDateInput').value;
+  if (!val) return;
+  clotureSelectedDate = val;
+
+  // On repart d'un comptage vierge pour le nouveau jour selectionne
+  renderClotureDenomTable();
+  document.getElementById('clotureChequeLines').innerHTML = '';
+  clotureChequeCounter = 0;
+  addClotureChequeLine();
+  document.getElementById('clotureRemiseEspeces').value = '';
+  document.getElementById('clotureRemiseCheque').value = '';
+  document.getElementById('clotureCbNombreCompte').value = '';
+  document.getElementById('clotureCbMontantCompte').value = '';
+
+  updateClotureTheorique();
+  updateClotureFondOuverture();
+  updateClotureEspeces();
+  updateClotureCheques();
+}
+
+function renderClotureDenomTable(){
+  const rowHtml = (d) => `
+    <tr>
+      <td>${d.toFixed(2)} €</td>
+      <td style="text-align:center;"><input type="number" min="0" step="1" style="width:70px;text-align:center;" id="clotureQte_${d}" oninput="updateClotureEspeces()"></td>
+      <td class="amt" id="clotureMontant_${d}">0.00 €</td>
+    </tr>
+  `;
+
+  document.querySelector('#clotureDenomTable tbody').innerHTML =
+    CLOTURE_DENOMINATIONS.slice(0, 6).map(rowHtml).join('');
+  document.querySelector('#clotureDenomTable2 tbody').innerHTML =
+    CLOTURE_DENOMINATIONS.slice(6).map(rowHtml).join('');
+}
+
+function updateClotureTheorique(){
+  if (!clotureVentesAll) return;
+
+  const ventesDuJour = clotureVentesAll.filter(v => normalizeDateStr(v.Date) === clotureSelectedDate && v.Statut !== 'Annulee');
+  const recap = computeAnalyseRecap(ventesDuJour);
+
+  const especes = recap.find(r => r.key === 'Especes');
+  const cheque = recap.find(r => r.key === 'Cheque');
+  const cb = recap.find(r => r.key === 'CB');
+
+  document.getElementById('clotureTheoEspeces').textContent = especes.total.toFixed(2) + ' €';
+  document.getElementById('clotureTheoCheque').textContent = cheque.total.toFixed(2) + ' €';
+  document.getElementById('clotureTheoCB').textContent = cb.total.toFixed(2) + ' €';
+
+  document.getElementById('clotureNbrCBTheo').textContent = `${cb.count} encaissement${cb.count > 1 ? 's' : ''}`;
+  document.getElementById('clotureMontantCBTheo').textContent = cb.total.toFixed(2) + ' €';
+
+  updateClotureEspeces();
+  updateClotureCheques();
+  updateClotureCB();
+}
+
+function updateClotureFondOuverture(){
+  const entry = (ouvertureCaisseData || []).find(o => normalizeDateStr(o.Date) === clotureSelectedDate);
+  const fond = entry ? (parseFloat(entry.Somme) || 0) : 0;
+  document.getElementById('clotureFondOuverture').textContent = fond.toFixed(2) + ' €';
+  updateClotureNouvelOuverture();
+}
+
+function updateClotureEspeces(){
+  let total = 0;
+  CLOTURE_DENOMINATIONS.forEach(d => {
+    const input = document.getElementById(`clotureQte_${d}`);
+    const qte = input ? (parseInt(input.value, 10) || 0) : 0;
+    const montant = qte * d;
+    total += montant;
+    const cell = document.getElementById(`clotureMontant_${d}`);
+    if (cell) cell.textContent = montant.toFixed(2) + ' €';
+  });
+
+  document.getElementById('clotureEspecesComptees').textContent = total.toFixed(2) + ' €';
+  document.getElementById('clotureCompteEspeces').textContent = total.toFixed(2) + ' €';
+
+  const theoText = document.getElementById('clotureTheoEspeces').textContent;
+  const theo = parseFloat(theoText) || 0;
+  const dif = total - theo;
+  const difCell = document.getElementById('clotureDifEspeces');
+  difCell.textContent = (dif >= 0 ? '+' : '') + dif.toFixed(2) + ' €';
+  difCell.style.color = Math.abs(dif) < 0.005 ? 'var(--sage-dark)' : '#B0453B';
+
+  updateClotureNouvelOuverture();
+}
+
+function addClotureChequeLine(){
+  clotureChequeCounter++;
+  const id = clotureChequeCounter;
+  const container = document.getElementById('clotureChequeLines');
+  const line = document.createElement('div');
+  line.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:6px;';
+  line.id = `clotureChequeLine_${id}`;
+  line.innerHTML = `
+    <input type="number" class="cloture-cheque-input" min="0" step="0.01" placeholder="Montant du chèque" style="flex:1;" oninput="updateClotureCheques()">
+    <button class="btn-delete" onclick="removeClotureChequeLine(${id})">✕</button>
+  `;
+  container.appendChild(line);
+}
+
+function removeClotureChequeLine(id){
+  const line = document.getElementById(`clotureChequeLine_${id}`);
+  if (line) line.remove();
+  updateClotureCheques();
+}
+
+function updateClotureCheques(){
+  const inputs = document.querySelectorAll('.cloture-cheque-input');
+  let total = 0;
+  inputs.forEach(inp => { total += parseFloat(inp.value) || 0; });
+
+  document.getElementById('clotureChequesComptes').textContent = total.toFixed(2) + ' €';
+  document.getElementById('clotureCompteCheque').textContent = total.toFixed(2) + ' €';
+
+  const theoText = document.getElementById('clotureTheoCheque').textContent;
+  const theo = parseFloat(theoText) || 0;
+  const dif = total - theo;
+  const difCell = document.getElementById('clotureDifCheque');
+  difCell.textContent = (dif >= 0 ? '+' : '') + dif.toFixed(2) + ' €';
+  difCell.style.color = Math.abs(dif) < 0.005 ? 'var(--sage-dark)' : '#B0453B';
+}
+
+function updateClotureCB(){
+  const montantInput = document.getElementById('clotureCbMontantCompte');
+  const montant = montantInput ? (parseFloat(montantInput.value) || 0) : 0;
+
+  document.getElementById('clotureCompteCB').textContent = montant.toFixed(2) + ' €';
+
+  const theoText = document.getElementById('clotureTheoCB').textContent;
+  const theo = parseFloat(theoText) || 0;
+  const dif = montant - theo;
+  const difCell = document.getElementById('clotureDifCB');
+  difCell.textContent = (dif >= 0 ? '+' : '') + dif.toFixed(2) + ' €';
+  difCell.style.color = Math.abs(dif) < 0.005 ? 'var(--sage-dark)' : '#B0453B';
+}
+
+function updateClotureNouvelOuverture(){
+  const fond = parseFloat(document.getElementById('clotureFondOuverture').textContent) || 0;
+  const especesComptees = parseFloat(document.getElementById('clotureEspecesComptees').textContent) || 0;
+  const remiseEspeces = parseFloat(document.getElementById('clotureRemiseEspeces').value) || 0;
+
+  const nouveau = fond + especesComptees - remiseEspeces;
+  document.getElementById('clotureNouvelOuverture').textContent = nouveau.toFixed(2) + ' €';
+}
+
+let analyseVentes = null;
+let analyseSubTab = 'generale';
+let analyseSelectedDate = null; // initialisee a aujourd'hui au premier chargement
+
+async function loadAnalyseData(){
+  if (!analyseSelectedDate){
+    analyseSelectedDate = todayStr();
+  }
+  document.getElementById('analyseDateInput').value = analyseSelectedDate;
+
+  const container = document.getElementById('analyseContent');
+  container.innerHTML = '<div class="meta" style="color:var(--ink-soft);font-size:0.85rem;">Chargement...</div>';
+
+  const [res, resOuverture] = await Promise.all([
+    apiGet('getVentes'),
+    apiGet('getOuvertureCaisse')
+  ]);
+
+  if (res && res.error){
+    container.innerHTML = `<div class="meta" style="color:#B0453B;">Erreur : ${res.error}</div>`;
+    return;
+  }
+
+  analyseVentes = res || [];
+  if (resOuverture && !resOuverture.error){
+    ouvertureCaisseData = resOuverture;
+  }
+  renderAnalyseContent();
+}
+
+function onAnalyseDateChange(){
+  const val = document.getElementById('analyseDateInput').value;
+  if (!val) return;
+  analyseSelectedDate = val;
+  renderAnalyseContent();
+}
+
+function computeAnalyseRecap(ventes){
+  // Les ventes annulees (erreur de paiement corrigee par recreation) ne doivent jamais
+  // compter dans les totaux : leurs montants d'origine restent inscrits pour tracabilite
+  // mais sont exclus de toute analyse/cloture, seule la vente de remplacement compte.
+  const ventesActives = ventes.filter(v => v.Statut !== 'Annulee');
+
+  const methods = [
+    { key: 'CB', label: 'CB', field: 'Montant_CB' },
+    { key: 'Cheque', label: 'Chèque', field: 'Montant_Cheque' },
+    { key: 'Especes', label: 'Espèces', field: 'Montant_Especes' }
+  ];
+
+  return methods.map(m => {
+    const lines = ventesActives.filter(v => (parseFloat(v[m.field]) || 0) > 0);
+    const total = lines.reduce((sum, v) => sum + (parseFloat(v[m.field]) || 0), 0);
+    return { key: m.key, label: m.label, field: m.field, count: lines.length, total, lines };
+  });
+}
+
+function showAnalyseSub(tab){
+  analyseSubTab = tab;
+
+  const idMap = { generale: 'analyseSubGenerale', cb: 'analyseSubCB', cheque: 'analyseSubCheque', espece: 'analyseSubEspece', erreur: 'analyseSubErreur' };
+  document.querySelectorAll('.analyse-subnav-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById(idMap[tab]);
+  if (btn) btn.classList.add('active');
+
+  renderAnalyseContent();
+}
+
+function renderAnalyseContent(){
+  const container = document.getElementById('analyseContent');
+  if (!container) return;
+  if (!analyseVentes){
+    container.innerHTML = '<div class="meta" style="color:var(--ink-soft);font-size:0.85rem;">Chargement...</div>';
+    return;
+  }
+
+  if (analyseSubTab === 'erreur'){
+    renderErreurPaiementTab();
+    return;
+  }
+
+  const ventesDuJour = analyseVentes.filter(v => normalizeDateStr(v.Date) === analyseSelectedDate);
+  const recap = computeAnalyseRecap(ventesDuJour);
+
+  if (analyseSubTab === 'generale'){
+    const ouvertureEntry = (ouvertureCaisseData || []).find(o => normalizeDateStr(o.Date) === analyseSelectedDate);
+    const fondCaisse = ouvertureEntry ? (parseFloat(ouvertureEntry.Somme) || 0) : 0;
+
+    container.innerHTML = `
+      <div class="analyse-recap-card">
+        ${recap.map(r => `
+          <div class="analyse-recap-row">
+            <div><span class="arr-label">${r.label}</span><span class="arr-count">(${r.count} encaissement${r.count > 1 ? 's' : ''})</span></div>
+            <div class="arr-total">${r.total.toFixed(2)} €</div>
+          </div>
+          ${r.key === 'Especes' ? `
+            <div class="analyse-recap-row" style="padding-top:4px;padding-bottom:4px;">
+              <div style="font-size:0.78rem;color:var(--ink-soft);">↳ Fond de caisse (ouverture)${!ouvertureEntry ? ' — non renseigné' : ''}</div>
+              <div style="font-size:0.85rem;color:var(--ink-soft);">${fondCaisse.toFixed(2)} €</div>
+            </div>
+            <div class="analyse-recap-row">
+              <div style="font-size:0.78rem;font-weight:700;">↳ Total attendu en caisse</div>
+              <div class="arr-total">${(fondCaisse + r.total).toFixed(2)} €</div>
+            </div>
+          ` : ''}
+        `).join('')}
+      </div>
+    `;
+    return;
+  }
+
+  const keyMap = { cb: 'CB', cheque: 'Cheque', espece: 'Especes' };
+  const r = recap.find(x => x.key === keyMap[analyseSubTab]);
+  if (!r) return;
+
+  let ouvertureHtml = '';
+  if (analyseSubTab === 'espece'){
+    const entry = (ouvertureCaisseData || []).find(o => normalizeDateStr(o.Date) === analyseSelectedDate);
+    const fondCaisse = entry ? (parseFloat(entry.Somme) || 0) : 0;
+    const totalCaisse = fondCaisse + r.total;
+
+    ouvertureHtml = `
+      <div class="analyse-recap-row">
+        <div><span class="arr-label">Fond de caisse (ouverture)</span></div>
+        <div class="arr-total">${fondCaisse.toFixed(2)} €</div>
+      </div>
+      <div class="analyse-recap-row">
+        <div><span class="arr-label">Total attendu en caisse</span></div>
+        <div class="arr-total">${totalCaisse.toFixed(2)} €</div>
+      </div>
+    `;
+    if (!entry){
+      ouvertureHtml = `<div class="meta" style="font-size:0.78rem;color:var(--ink-soft);margin-bottom:6px;">Aucun fond de caisse renseigné pour ce jour (voir l'onglet "Ouverture caisse").</div>` + ouvertureHtml;
+    }
+  }
+
+  container.innerHTML = `
+    <div class="analyse-recap-card">
+      <div class="analyse-recap-row">
+        <div><span class="arr-label">${r.label}</span><span class="arr-count">(${r.count} encaissement${r.count > 1 ? 's' : ''})</span></div>
+        <div class="arr-total">${r.total.toFixed(2)} €</div>
+      </div>
+      ${ouvertureHtml}
+    </div>
+    <div class="analyse-detail-card">
+      <table class="analyse-table">
+        <thead>
+          <tr><th>N° Vente</th><th>Client</th><th style="text-align:right;">Montant</th></tr>
+        </thead>
+        <tbody>
+          ${r.lines.length ? r.lines.map(v => `
+            <tr>
+              <td>${v.ID_Vente}</td>
+              <td>${v.Client_Nom || '—'}</td>
+              <td class="amt">${(parseFloat(v[r.field]) || 0).toFixed(2)} €</td>
+            </tr>
+          `).join('') : `<tr><td colspan="3" style="color:var(--ink-soft);">Aucun encaissement ${r.label.toLowerCase()}.</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ---------- Onglet "Erreur paiement" : recherche une vente et corrige son moyen de paiement ----------
+let analyseErreurSelectedId = null;
+
+function renderErreurPaiementTab(){
+  const container = document.getElementById('analyseContent');
+  analyseErreurSelectedId = null;
+
+  container.innerHTML = `
+    <div class="analyse-detail-card">
+      <div class="header-label" style="margin-bottom:4px;">Erreur de mode de paiement</div>
+      <div class="meta" style="font-size:0.78rem;color:var(--ink-soft);margin-bottom:8px;">
+        Une vente validée ne peut jamais être modifiée. La correction recrée une nouvelle vente avec le bon moyen de paiement et annule l'ancienne (jamais supprimée).
+      </div>
+      <div class="search-wrap" style="margin-bottom:6px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="analyseErreurSearch" type="text" placeholder="N° de vente ou nom du client..." oninput="onAnalyseErreurSearch()">
+      </div>
+      <div id="analyseErreurResults"></div>
+      <div id="analyseErreurDetail"></div>
+    </div>
+  `;
+}
+
+function onAnalyseErreurSearch(){
+  const q = normalizeSearch(document.getElementById('analyseErreurSearch').value.trim());
+  const resultsBox = document.getElementById('analyseErreurResults');
+  document.getElementById('analyseErreurDetail').innerHTML = '';
+  analyseErreurSelectedId = null;
+
+  if (!q){ resultsBox.innerHTML = ''; return; }
+
+  const matches = analyseVentes
+    .filter(v => normalizeSearch(v.ID_Vente).includes(q) || normalizeSearch(v.Client_Nom).includes(q))
+    .sort((a, b) => normalizeDateStr(b.Date).localeCompare(normalizeDateStr(a.Date)))
+    .slice(0, 15);
+
+  resultsBox.innerHTML = matches.length
+    ? matches.map(v => `
+        <div class="rdv-client-result" onclick="pickErreurVente('${v.ID_Vente}')">
+          <strong>${v.ID_Vente}</strong> — ${formatDateFR(normalizeDateStr(v.Date))} — ${v.Client_Nom || '—'} — ${(parseFloat(v.Total) || 0).toFixed(2)} € (${v.Moyen_Paiement || '—'})${v.Statut === 'Annulee' ? ' <span style="color:#B0453B;font-weight:700;">— Annulée</span>' : ''}
+        </div>
+      `).join('')
+    : '<div class="meta" style="font-size:0.82rem;color:var(--ink-soft);padding:6px;">Aucun résultat.</div>';
+}
+
+function pickErreurVente(idVente){
+  const v = analyseVentes.find(x => x.ID_Vente === idVente);
+  if (!v) return;
+
+  analyseErreurSelectedId = idVente;
+  document.getElementById('analyseErreurResults').innerHTML = '';
+  document.getElementById('analyseErreurSearch').value = `${v.ID_Vente} — ${v.Client_Nom || ''}`;
+
+  const total = (parseFloat(v.Total) || 0).toFixed(2);
+
+  if (v.Statut === 'Annulee'){
+    document.getElementById('analyseErreurDetail').innerHTML = `
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line);">
+        <div class="rdv-client">${v.Client_Nom || '—'} — ${total} €</div>
+        <div class="rdv-detail">${formatDateFR(normalizeDateStr(v.Date))} · Moyen d'origine : ${v.Moyen_Paiement || '—'}</div>
+        <div class="meta" style="color:#B0453B;font-weight:700;margin-top:6px;">Vente déjà annulée</div>
+        <div class="meta" style="color:var(--ink-soft);font-size:0.82rem;">${v.Commentaire || ''}</div>
+      </div>
+    `;
+    return;
+  }
+
+  document.getElementById('analyseErreurDetail').innerHTML = `
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line);">
+      <div class="rdv-item" style="border-bottom:none;padding:0 0 10px;">
+        <div class="rdv-info">
+          <div class="rdv-client">${v.Client_Nom || '—'} — ${total} €</div>
+          <div class="rdv-detail">${formatDateFR(normalizeDateStr(v.Date))} · Moyen actuel : ${v.Moyen_Paiement || '—'}</div>
+        </div>
+      </div>
+      <div class="header-label" style="margin:6px 0 8px;">Recréer avec le bon moyen de paiement</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-small" onclick="applyErreurCorrection('Especes')">Espèces</button>
+        <button class="btn btn-ghost btn-small" onclick="applyErreurCorrection('CB')">CB</button>
+        <button class="btn btn-ghost btn-small" onclick="applyErreurCorrection('Cheque')">Chèque</button>
+      </div>
+    </div>
+  `;
+}
+
+async function applyErreurCorrection(nouveauMoyen){
+  if (!analyseErreurSelectedId) return;
+
+  toast('Recréation de la vente en cours...');
+  const res = await apiPost('corrigerErreurPaiementVente', { ID_Vente: analyseErreurSelectedId, Nouveau_Moyen: nouveauMoyen });
+  if (res.error){ toast('Erreur : ' + res.error); return; }
+
+  toast(`Vente ${res.ancien_id} annulée, remplacée par ${res.nouveau_id} ✓`);
+
+  // On recharge entierement les ventes pour rester coherent (nouvelle vente + statut de l'ancienne)
+  const resVentes = await apiGet('getVentes');
+  if (resVentes && !resVentes.error){ analyseVentes = resVentes; }
+
+  renderErreurPaiementTab();
+}
+
+// ============================================
+// AGENDA — mini-calendrier + rendez-vous du jour
+// ============================================
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+// Normalise une valeur Date venant du Sheet (texte 'YYYY-MM-DD' ou objet Date) en 'YYYY-MM-DD'
+function normalizeDateStr(val){
+  if (!val) return '';
+  if (val instanceof Date){
+    return val.getFullYear() + '-' + String(val.getMonth() + 1).padStart(2, '0') + '-' + String(val.getDate()).padStart(2, '0');
+  }
+  const str = String(val);
+  // Format ISO avec heure (ex: ventes horodatees) : on convertit en heure locale plutot que
+  // de decouper le texte brut, qui serait en UTC et pourrait decaler le jour la nuit.
+  if (/^\d{4}-\d{2}-\d{2}T/.test(str)){
+    const d = new Date(str);
+    if (!isNaN(d)) return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return match ? match[0] : str;
+}
+
+// Normalise une valeur Heure venant du Sheet en 'HH:MM'.
+// Tolere le bug historique ou Sheets avait converti le texte en Time (objet Date epoch 1899-12-30).
+function normalizeHeureStr(val){
+  if (!val) return '';
+  if (val instanceof Date){
+    return String(val.getHours()).padStart(2, '0') + ':' + String(val.getMinutes()).padStart(2, '0');
+  }
+  const str = String(val);
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(str)){ // ancien bug : ISO avec date epoch Sheets
+    const d = new Date(str);
+    if (!isNaN(d)) return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
+  const plainMatch = str.match(/^(\d{1,2}):(\d{2})/);
+  if (plainMatch) return plainMatch[1].padStart(2, '0') + ':' + plainMatch[2];
+  return str;
+}
+
+let calendarViewDate = new Date();
+let agendaSelectedDate = todayStr();
+
+const MONTH_NAMES_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const DOW_LABELS_FR = ['L','M','M','J','V','S','D'];
+
+function renderMiniCalendar(){
+  const containers = document.querySelectorAll('.mini-calendar-card');
+  if (!containers.length) return;
+
+  const year = calendarViewDate.getFullYear();
+  const month = calendarViewDate.getMonth();
+
+  const firstOfMonth = new Date(year, month, 1);
+  let startDow = firstOfMonth.getDay(); // 0=dimanche..6=samedi
+  startDow = (startDow === 0) ? 6 : startDow - 1; // 0=lundi..6=dimanche
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const daysInPrevMonth = new Date(year, month, 0).getDate();
+  const todayStrVal = todayStr();
+
+  const datesWithRdv = new Set(rendezVous.map(r => normalizeDateStr(r.Date)));
+
+  let cellsHtml = '';
+
+  for (let i = startDow - 1; i >= 0; i--){
+    cellsHtml += `<div class="mini-cal-day other-month">${daysInPrevMonth - i}</div>`;
+  }
+
+  for (let d = 1; d <= daysInMonth; d++){
+    const dateStr = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+    const isToday = dateStr === todayStrVal;
+    const isSelected = dateStr === agendaSelectedDate;
+    const hasRdv = datesWithRdv.has(dateStr);
+    cellsHtml += `<div class="mini-cal-day ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}" onclick="selectCalendarDay('${dateStr}')">${d}${hasRdv ? '<span class="dot"></span>' : ''}</div>`;
+  }
+
+  const totalCells = startDow + daysInMonth;
+  const trailing = (7 - (totalCells % 7)) % 7;
+  for (let d = 1; d <= trailing; d++){
+    cellsHtml += `<div class="mini-cal-day other-month">${d}</div>`;
+  }
+
+  const html = `
+    <div class="mini-cal-header">
+      <button onclick="changeCalendarMonth(-1)">‹</button>
+      <div class="mc-title">${MONTH_NAMES_FR[month]} ${year}</div>
+      <button onclick="changeCalendarMonth(1)">›</button>
+    </div>
+    <div class="mini-cal-grid">
+      ${DOW_LABELS_FR.map(l => `<div class="mini-cal-dow">${l}</div>`).join('')}
+      ${cellsHtml}
+    </div>
+  `;
+
+  containers.forEach(c => { c.innerHTML = html; });
+}
+
+function changeCalendarMonth(delta){
+  calendarViewDate.setMonth(calendarViewDate.getMonth() + delta);
+  renderMiniCalendar();
+}
+
+function selectCalendarDay(dateStr){
+  agendaSelectedDate = dateStr;
+  renderMiniCalendar();
+  renderRdvDayList();
+}
+
+const RDV_COLORS = ['#5F8B7A', '#E2984B', '#7C93C9', '#B0453B', '#8E6BAE', '#4FA3A0', '#C77DAB', '#9AA84C'];
+const RDV_PX_PER_MIN = 1.25; // 75px par heure (au lieu de 60px, +25%)
+
+// Repartit les RDV qui se chevauchent en colonnes cote a cote (comme Google/Apple Calendar).
+// items doit etre trie par heure de debut croissante, chaque item ayant startMin/endMin (minutes depuis minuit).
+// Retourne un tableau parallele {colIndex, colCount} pour chaque item.
+function computeRdvLayout(items){
+  const result = new Array(items.length);
+  let i = 0;
+  while (i < items.length){
+    let clusterEnd = items[i].endMin;
+    let j = i + 1;
+    while (j < items.length && items[j].startMin < clusterEnd){
+      clusterEnd = Math.max(clusterEnd, items[j].endMin);
+      j++;
+    }
+    const columnEnds = [];
+    const colOf = [];
+    for (let k = i; k < j; k++){
+      let placed = false;
+      for (let c = 0; c < columnEnds.length; c++){
+        if (columnEnds[c] <= items[k].startMin){
+          columnEnds[c] = items[k].endMin;
+          colOf[k] = c;
+          placed = true;
+          break;
+        }
+      }
+      if (!placed){
+        columnEnds.push(items[k].endMin);
+        colOf[k] = columnEnds.length - 1;
+      }
+    }
+    const colCount = columnEnds.length;
+    for (let k = i; k < j; k++){
+      result[k] = { colIndex: colOf[k], colCount: colCount };
+    }
+    i = j;
+  }
+  return result;
+}
+
+function renderRdvDayList(){
+  const labels = document.querySelectorAll('.rdv-day-label');
+  const lists = document.querySelectorAll('.rdv-day-list');
+  if (!lists.length) return;
+
+  const labelText = 'Rendez-vous du ' + formatDateFR(agendaSelectedDate);
+  labels.forEach(l => { l.textContent = labelText; });
+
+  const isToday = agendaSelectedDate === todayStr();
+
+  const dayRdvs = rendezVous
+    .filter(r => normalizeDateStr(r.Date) === agendaSelectedDate)
+    .sort((a, b) => normalizeHeureStr(a.Heure).localeCompare(normalizeHeureStr(b.Heure)));
+
+  // Separe les RDV avec heure valide (positionnables sur la timeline) de ceux sans heure
+  const withTime = [];
+  const withoutTime = [];
+  dayRdvs.forEach(r => {
+    const h = normalizeHeureStr(r.Heure);
+    if (/^\d{2}:\d{2}$/.test(h)) withTime.push(Object.assign({}, r, { _heureNorm: h }));
+    else withoutTime.push(r);
+  });
+
+  if (!dayRdvs.length && !isToday){
+    const html = '<div class="meta" style="color:var(--ink-soft);font-size:0.85rem;">Aucun rendez-vous ce jour.</div>';
+    lists.forEach(l => { l.innerHTML = html; });
+    return;
+  }
+
+  let noTimeHtml = '';
+  if (withoutTime.length){
+    noTimeHtml = `<div class="rdv-no-time-list">` + withoutTime.map(r => `
+      <div class="rdv-item" ondblclick="openEditRdvModal('${r.ID_RDV}')">
+        <div class="rdv-heure">--:--</div>
+        <div class="rdv-info">
+          <div class="rdv-client">${r.Client_Nom || '—'}${r.Prestation ? ' · ' + r.Prestation : ''}</div>
+        </div>
+        <button class="btn-delete" onclick="event.stopPropagation(); deleteRdvItem('${r.ID_RDV}')">✕</button>
+      </div>
+    `).join('') + `</div>`;
+  }
+
+  // Timeline affichee si des RDV avec heure existent, OU si c'est aujourd'hui (pour montrer le trait de l'heure actuelle)
+  let timelineBodyHtml = null;
+  let earliestTopPx = null;
+  let nowTopPx = null;
+
+  if (withTime.length || isToday){
+    const now = new Date();
+    let startHour = 8, endHour = 20;
+
+    withTime.forEach(r => {
+      const [h, m] = r._heureNorm.split(':').map(Number);
+      const dureeMin = parseInt(r.Duree_Minutes, 10) || 30;
+      const finHeure = h + Math.ceil((m + dureeMin) / 60);
+      startHour = Math.min(startHour, h);
+      endHour = Math.max(endHour, finHeure + 1);
+    });
+    if (isToday){
+      startHour = Math.min(startHour, now.getHours());
+      endHour = Math.max(endHour, now.getHours() + 1);
+    }
+    endHour = Math.min(endHour, 23);
+
+    const totalHeightPx = (endHour - startHour) * 60 * RDV_PX_PER_MIN;
+
+    let hoursHtml = '';
+    for (let h = startHour; h <= endHour; h++){
+      hoursHtml += `<div class="rdv-timeline-hour" style="height:${60 * RDV_PX_PER_MIN}px;"><span class="hour-label">${String(h).padStart(2, '0')}:00</span></div>`;
+    }
+
+    withTime.forEach(r => {
+      const [h, m] = r._heureNorm.split(':').map(Number);
+      r.startMin = h * 60 + m;
+      r.endMin = r.startMin + (parseInt(r.Duree_Minutes, 10) || 30);
+    });
+    const rdvLayout = computeRdvLayout(withTime);
+
+    const blocksHtml = withTime.map((r, idx) => {
+      const [h, m] = r._heureNorm.split(':').map(Number);
+      const dureeMin = parseInt(r.Duree_Minutes, 10) || 30;
+      const startMin = (h - startHour) * 60 + m;
+      const topPx = startMin * RDV_PX_PER_MIN;
+      const heightPx = Math.max(dureeMin * RDV_PX_PER_MIN, 26);
+      const color = RDV_COLORS[idx % RDV_COLORS.length];
+
+      const { colIndex, colCount } = rdvLayout[idx];
+      const leftPct = (colIndex / colCount) * 100;
+      const widthPct = 100 / colCount;
+
+      if (earliestTopPx === null || topPx < earliestTopPx) earliestTopPx = topPx;
+
+      return `
+        <div class="rdv-block" style="top:${topPx}px;height:${heightPx}px;left:calc(${leftPct}% + 2px);width:calc(${widthPct}% - 4px);background:${color};" ondblclick="openEditRdvModal('${r.ID_RDV}')">
+          <button class="rb-delete" onclick="event.stopPropagation(); deleteRdvItem('${r.ID_RDV}')">✕</button>
+          <div class="rb-client">${r.Client_Nom || '—'}${r.Prestation ? ' · ' + r.Prestation : ''}</div>
+        </div>
+      `;
+    }).join('');
+
+    let nowLineHtml = '';
+    if (isToday){
+      nowTopPx = Math.max(0, Math.min(totalHeightPx, ((now.getHours() - startHour) * 60 + now.getMinutes()) * RDV_PX_PER_MIN));
+      nowLineHtml = `<div class="rdv-now-line" style="top:${nowTopPx}px;"></div>`;
+    }
+
+    timelineBodyHtml = `
+      <div class="rdv-timeline" style="height:${totalHeightPx}px;">
+        ${hoursHtml}
+        ${blocksHtml}
+        ${nowLineHtml}
+      </div>
+    `;
+  }
+
+  lists.forEach((list, idx) => {
+    if (timelineBodyHtml !== null){
+      const wrapId = 'rdvTimelineWrap_' + idx;
+      list.innerHTML = noTimeHtml + `<div class="rdv-timeline-wrap" id="${wrapId}">${timelineBodyHtml}</div>`;
+
+      const wrap = document.getElementById(wrapId);
+      if (wrap){
+        adjustRdvTimelineHeight(wrap);
+        if (nowTopPx !== null){
+          wrap.scrollTop = Math.max(0, nowTopPx - wrap.clientHeight / 2);
+        } else if (earliestTopPx !== null){
+          wrap.scrollTop = Math.max(0, earliestTopPx - 30);
+        }
+      }
+    } else {
+      list.innerHTML = noTimeHtml || '<div class="meta" style="color:var(--ink-soft);font-size:0.85rem;">Aucun rendez-vous ce jour.</div>';
+    }
+  });
+}
+
+// Contraint la hauteur visible de la timeline a l'espace restant dans la fenetre,
+// pour qu'il n'y ait jamais de scroll sur la page principale : seule la timeline defile.
+function adjustRdvTimelineHeight(wrap){
+  const top = wrap.getBoundingClientRect().top;
+  const bodyPaddingBottom = parseFloat(getComputedStyle(document.body).paddingBottom) || 0;
+  const available = window.innerHeight - top - bodyPaddingBottom - 16;
+  wrap.style.maxHeight = Math.max(180, available) + 'px';
+}
+
+window.addEventListener('resize', () => {
+  document.querySelectorAll('.rdv-timeline-wrap').forEach(wrap => adjustRdvTimelineHeight(wrap));
+});
+
+// Rafraichit la timeline chaque minute : deplace le trait de l'heure actuelle et re-centre dessus
+setInterval(() => {
+  const viewCaisse = document.getElementById('viewCaisse');
+  const viewAgenda = document.getElementById('viewAgenda');
+  const caisseVisible = viewCaisse && viewCaisse.style.display !== 'none';
+  const agendaVisible = viewAgenda && viewAgenda.style.display !== 'none';
+  if (caisseVisible || agendaVisible){
+    renderRdvDayList();
+  }
+}, 60000);
+
+// ---------- Modal rendez-vous ----------
+let rdvClientSelectedId = null;
+let rdvPendingClientCreation = false;
+let rdvPendingAnimalCreation = false;
+
+function openClientModalFromRdv(){
+  rdvPendingClientCreation = true;
+  document.getElementById('overlayRdv').classList.remove('show');
+  openClientModal();
+}
+
+function openRdvModal(){
+  document.getElementById('rdvModalTitle').textContent = 'Nouveau rendez-vous';
+  document.getElementById('rdvEditId').value = '';
+  document.getElementById('rdvDate').value = agendaSelectedDate;
+  document.getElementById('rdvHeure').value = '';
+  document.getElementById('rdvDuree').value = '';
+  document.getElementById('rdvNotes').value = '';
+
+  rdvClientSelectedId = null;
+  document.getElementById('rdvClientSearch').value = '';
+  document.getElementById('rdvClientList').innerHTML = '';
+  document.getElementById('rdvClientSelected').textContent = '';
+  document.getElementById('rdvAnimalRow').style.display = 'none';
+
+  const prestations = parametres.filter(p => p.Type === 'Prestation').map(p => p.Valeur);
+  fillSelect(document.getElementById('rdvPrestation'), prestations, 'Sélectionner');
+
+  document.getElementById('overlayRdv').classList.add('show');
+}
+
+function openEditRdvModal(idRdv){
+  const rdv = rendezVous.find(r => r.ID_RDV === idRdv);
+  if (!rdv) return;
+
+  document.getElementById('rdvModalTitle').textContent = 'Modifier le rendez-vous';
+  document.getElementById('rdvEditId').value = idRdv;
+  document.getElementById('rdvDate').value = normalizeDateStr(rdv.Date);
+  document.getElementById('rdvHeure').value = normalizeHeureStr(rdv.Heure);
+  document.getElementById('rdvDuree').value = rdv.Duree_Minutes || '';
+  document.getElementById('rdvNotes').value = rdv.Notes || '';
+
+  const prestations = parametres.filter(p => p.Type === 'Prestation').map(p => p.Valeur);
+  fillSelect(document.getElementById('rdvPrestation'), prestations, 'Sélectionner');
+  document.getElementById('rdvPrestation').value = rdv.Prestation || '';
+
+  document.getElementById('rdvClientList').innerHTML = '';
+
+  if (rdv.ID_Client && clients.find(c => c.ID_Client === rdv.ID_Client)){
+    pickRdvClient(rdv.ID_Client);
+    if (rdv.Animal){
+      const animalSelect = document.getElementById('rdvAnimal');
+      if (animalSelect) animalSelect.value = rdv.Animal;
+    }
+  } else {
+    // Client non retrouve dans la base (rare) : on garde au moins le nom tel quel
+    rdvClientSelectedId = rdv.ID_Client || null;
+    document.getElementById('rdvClientSearch').value = rdv.Client_Nom || '';
+    document.getElementById('rdvClientSelected').textContent = rdv.Client_Nom ? 'Client sélectionné : ' + rdv.Client_Nom : '';
+    document.getElementById('rdvAnimalRow').style.display = 'none';
+  }
+
+  document.getElementById('overlayRdv').classList.add('show');
+}
+
+function closeRdvModal(){
+  document.getElementById('overlayRdv').classList.remove('show');
+}
+
+document.getElementById('rdvClientSearch').addEventListener('input', (e) => {
+  const q = normalizeSearch(e.target.value.trim());
+  const list = document.getElementById('rdvClientList');
+  if (!q){ list.innerHTML = ''; return; }
+
+  const filtered = clients.filter(c =>
+    normalizeSearch(c.Nom).includes(q) || normalizeSearch(c.Prenom).includes(q)
+  ).slice(0, 20);
+
+  list.innerHTML = filtered.length
+    ? filtered.map(c => `<div class="rdv-client-result" onclick="pickRdvClient('${c.ID_Client}')">${c.Prenom || ''} ${c.Nom || ''}</div>`).join('')
+    : '<div class="meta" style="font-size:0.82rem;color:var(--ink-soft);padding:6px;">Aucun résultat.</div>';
+});
+
+function pickRdvClient(idClient){
+  const cl = clients.find(c => c.ID_Client === idClient);
+  if (!cl) return;
+
+  rdvClientSelectedId = idClient;
+  const nomComplet = `${cl.Prenom || ''} ${cl.Nom || ''}`.trim();
+  document.getElementById('rdvClientSelected').textContent = 'Client sélectionné : ' + nomComplet;
+  document.getElementById('rdvClientList').innerHTML = '';
+  document.getElementById('rdvClientSearch').value = nomComplet;
+
+  const animaux = animauxParClient[idClient] || [];
+  const animalRow = document.getElementById('rdvAnimalRow');
+  if (animaux.length){
+    fillSelect(document.getElementById('rdvAnimal'), animaux.map(a => a.Nom_Animal), 'Sélectionner');
+    animalRow.style.display = '';
+  } else {
+    animalRow.style.display = 'none';
+  }
+}
+
+function timeToMinutes(hhmm){
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
+}
+
+// Cherche un RDV existant qui chevauche le creneau donne (meme jour, plages horaires qui se recoupent).
+// excludeId sert a s'exclure soi-meme lors d'une modification.
+function findRdvConflict(date, heureStr, dureeMin, excludeId){
+  if (!heureStr) return null; // pas d'heure = pas positionne sur la grille, pas de conflit possible
+  const newStart = timeToMinutes(heureStr);
+  const newEnd = newStart + (parseInt(dureeMin, 10) || 30);
+
+  return rendezVous.find(r => {
+    if (excludeId && r.ID_RDV === excludeId) return false;
+    if (normalizeDateStr(r.Date) !== date) return false;
+    const h = normalizeHeureStr(r.Heure);
+    if (!/^\d{2}:\d{2}$/.test(h)) return false;
+    const start = timeToMinutes(h);
+    const end = start + (parseInt(r.Duree_Minutes, 10) || 30);
+    return newStart < end && start < newEnd;
+  }) || null;
+}
+
+async function saveRdv(){
+  if (!rdvClientSelectedId){ toast('Choisis un client'); return; }
+  const date = document.getElementById('rdvDate').value;
+  if (!date){ toast('La date est obligatoire'); return; }
+
+  const cl = clients.find(c => c.ID_Client === rdvClientSelectedId);
+  const animalRowVisible = document.getElementById('rdvAnimalRow').style.display !== 'none';
+  const editId = document.getElementById('rdvEditId').value;
+
+  const data = {
+    Date: date,
+    Heure: document.getElementById('rdvHeure').value,
+    Duree_Minutes: document.getElementById('rdvDuree').value,
+    ID_Client: rdvClientSelectedId,
+    Client_Nom: cl ? `${cl.Prenom || ''} ${cl.Nom || ''}`.trim() : (document.getElementById('rdvClientSearch').value.trim()),
+    Prestation: document.getElementById('rdvPrestation').value,
+    Animal: animalRowVisible ? document.getElementById('rdvAnimal').value : '',
+    Notes: document.getElementById('rdvNotes').value.trim()
+  };
+
+  const conflict = findRdvConflict(date, data.Heure, data.Duree_Minutes, editId || null);
+  if (conflict){
+    const heureConflit = normalizeHeureStr(conflict.Heure);
+    const ok = confirm(
+      `Créneau horaire déjà attribué : ${conflict.Client_Nom || 'un autre client'} à ${heureConflit}` +
+      (conflict.Prestation ? ` (${conflict.Prestation})` : '') +
+      `.\n\nEnregistrer quand même ?`
+    );
+    if (!ok) return;
+  }
+
+  toast('Enregistrement du rendez-vous...');
+
+  if (editId){
+    data.ID_RDV = editId;
+    const res = await apiPost('updateRendezVous', data);
+    if (res.error){ toast('Erreur : ' + res.error); return; }
+    toast('Rendez-vous modifié ✓');
+  } else {
+    const res = await apiPost('addRendezVous', data);
+    if (res.error){ toast('Erreur : ' + res.error); return; }
+    toast('Rendez-vous ajouté ✓');
+  }
+
+  closeRdvModal();
+
+  agendaSelectedDate = date;
+  calendarViewDate = new Date(date + 'T00:00:00');
+  await loadAll();
+}
+
+async function deleteRdvItem(idRdv){
+  if (!confirm('Supprimer ce rendez-vous ?')) return;
+
+  toast('Suppression...');
+  const res = await apiPost('deleteRendezVous', { ID_RDV: idRdv });
+  if (res.error){ toast('Erreur : ' + res.error); return; }
+
+  toast('Supprimé ✓');
+  await loadAll();
+}
+
+document.getElementById('btnCancelRdv').addEventListener('click', closeRdvModal);
+document.getElementById('btnSaveRdv').addEventListener('click', saveRdv);
 
 // ---------- Rendu liste clients ----------
 function renderClientList(list){
@@ -1168,7 +2799,10 @@ function renderCardBody(idClient){
             <div class="a-meta">${[a.Race, a.Taille, a.Poids ? a.Poids + ' kg' : ''].filter(Boolean).join(' · ')}</div>
             ${a.Notes_Sante ? `<div class="a-meta">⚕ ${a.Notes_Sante}</div>` : ''}
           </div>
-          <button class="btn-delete" onclick="deleteAnimalItem('${a.ID_Animal}', '${idClient}')">✕</button>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-ghost btn-small" onclick="openEditAnimalModal('${a.ID_Animal}', '${idClient}')">Modifier</button>
+            <button class="btn-delete" onclick="deleteAnimalItem('${a.ID_Animal}', '${idClient}')">✕</button>
+          </div>
         </div>
       </div>
     `).join('') : '<div class="meta" style="color:var(--ink-soft);font-size:0.85rem;">Aucun animal enregistré.</div>'}
@@ -1281,6 +2915,10 @@ function openEditClientModal(idClient){
 
 function closeClientModal(){
   document.getElementById('overlayClient').classList.remove('show');
+  if (rdvPendingClientCreation){
+    rdvPendingClientCreation = false;
+    document.getElementById('overlayRdv').classList.add('show');
+  }
 }
 
 async function saveClient(){
@@ -1317,9 +2955,16 @@ async function saveClient(){
     const res = await apiPost('addClient', data);
     if (res.error){ toast('Erreur : ' + res.error); return; }
 
-    closeClientModal();
+    document.getElementById('overlayClient').classList.remove('show');
     toast('Client ajouté ✓');
     await loadAll();
+
+    if (rdvPendingClientCreation){
+      rdvPendingClientCreation = false;
+      rdvClientSelectedId = res.id_client;
+      rdvPendingAnimalCreation = true;
+      openAnimalModal(res.id_client);
+    }
   }
 }
 
@@ -1338,7 +2983,9 @@ function refreshRaceOptions(){
 }
 
 function openAnimalModal(idClient){
+  document.getElementById('animalModalTitle').textContent = 'Nouvel animal';
   document.getElementById('aClientId').value = idClient;
+  document.getElementById('aEditId').value = '';
   ['aNom','aPoids','aDateNaissance','aNotes'].forEach(id => document.getElementById(id).value = '');
 
   const especes = parametres.filter(p => p.Type === 'Espece').map(p => p.Valeur);
@@ -1350,8 +2997,40 @@ function openAnimalModal(idClient){
 
   document.getElementById('overlayAnimal').classList.add('show');
 }
+
+function openEditAnimalModal(idAnimal, idClient){
+  const animal = (animauxParClient[idClient] || []).find(a => a.ID_Animal === idAnimal);
+  if (!animal) return;
+
+  document.getElementById('animalModalTitle').textContent = 'Modifier l\'animal';
+  document.getElementById('aClientId').value = idClient;
+  document.getElementById('aEditId').value = idAnimal;
+
+  document.getElementById('aNom').value = animal.Nom_Animal || '';
+  document.getElementById('aPoids').value = animal.Poids || '';
+  document.getElementById('aDateNaissance').value = animal.Date_Naissance || '';
+  document.getElementById('aNotes').value = animal.Notes_Sante || '';
+
+  const especes = parametres.filter(p => p.Type === 'Espece').map(p => p.Valeur);
+  const tailles = parametres.filter(p => p.Type === 'Taille').map(p => p.Valeur);
+
+  fillSelect(document.getElementById('aEspece'), especes, 'Sélectionner');
+  document.getElementById('aEspece').value = animal.Espece || '';
+  refreshRaceOptions();
+  document.getElementById('aRace').value = animal.Race || '';
+
+  fillSelect(document.getElementById('aTaille'), tailles, 'Sélectionner');
+  document.getElementById('aTaille').value = animal.Taille || '';
+
+  document.getElementById('overlayAnimal').classList.add('show');
+}
 function closeAnimalModal(){
   document.getElementById('overlayAnimal').classList.remove('show');
+  if (rdvPendingAnimalCreation){
+    rdvPendingAnimalCreation = false;
+    document.getElementById('overlayRdv').classList.add('show');
+    if (rdvClientSelectedId) pickRdvClient(rdvClientSelectedId);
+  }
 }
 
 async function saveAnimal(){
@@ -1359,8 +3038,11 @@ async function saveAnimal(){
   const Espece = document.getElementById('aEspece').value;
   if (!Nom_Animal || !Espece){ toast('Nom et espèce obligatoires'); return; }
 
+  const editId = document.getElementById('aEditId').value;
+  const idClient = document.getElementById('aClientId').value;
+
   const data = {
-    ID_Client: document.getElementById('aClientId').value,
+    ID_Client: idClient,
     Nom_Animal,
     Espece,
     Race: document.getElementById('aRace').value,
@@ -1371,15 +3053,37 @@ async function saveAnimal(){
   };
 
   toast('Enregistrement...');
+
+  if (editId){
+    data.ID_Animal = editId;
+    const res = await apiPost('updateAnimal', data);
+    if (res.error){ toast('Erreur : ' + res.error); return; }
+    toast('Animal modifié ✓');
+
+    closeAnimalModal();
+    await loadAll();
+    document.getElementById(`card-${idClient}`).classList.add('open');
+    renderCardBody(idClient);
+    return;
+  }
+
   const res = await apiPost('addAnimal', data);
   if (res.error){ toast('Erreur : ' + res.error); return; }
-
-  closeAnimalModal();
   toast('Animal ajouté ✓');
-  const idClient = data.ID_Client;
+
+  document.getElementById('overlayAnimal').classList.remove('show');
   await loadAll();
-  document.getElementById(`card-${idClient}`).classList.add('open');
-  renderCardBody(idClient);
+
+  if (rdvPendingAnimalCreation){
+    rdvPendingAnimalCreation = false;
+    document.getElementById('overlayRdv').classList.add('show');
+    pickRdvClient(idClient);
+    const animalSelect = document.getElementById('rdvAnimal');
+    if (animalSelect) animalSelect.value = Nom_Animal;
+  } else {
+    document.getElementById(`card-${idClient}`).classList.add('open');
+    renderCardBody(idClient);
+  }
 }
 
 async function deleteAnimalItem(idAnimal, idClient){
@@ -1400,14 +3104,20 @@ async function deleteAnimalItem(idAnimal, idClient){
 }
 
 // ---------- Recherche ----------
+// Normalise pour une recherche insensible a la casse ET aux accents
+// (ex: "Séverine" doit etre trouve en tapant "Severine")
+function normalizeSearch(str){
+  return (str || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 document.getElementById('search').addEventListener('input', (e) => {
-  const q = e.target.value.trim().toLowerCase();
+  const q = normalizeSearch(e.target.value.trim());
   if (!q){ renderClientList(clients); return; }
   const filtered = clients.filter(c =>
-    (c.Nom || '').toLowerCase().includes(q) ||
-    (c.Prenom || '').toLowerCase().includes(q) ||
-    (c.Telephone || '').toLowerCase().includes(q) ||
-    (c.Commune || '').toLowerCase().includes(q)
+    normalizeSearch(c.Nom).includes(q) ||
+    normalizeSearch(c.Prenom).includes(q) ||
+    normalizeSearch(c.Telephone).includes(q) ||
+    normalizeSearch(c.Commune).includes(q)
   );
   renderClientList(filtered);
 });
@@ -1421,6 +3131,8 @@ function showView(view){
   document.getElementById('viewParametres').style.display = view === 'parametres' ? '' : 'none';
   document.getElementById('viewCaisse').style.display = view === 'caisse' ? '' : 'none';
   document.getElementById('viewAgenda').style.display = view === 'agenda' ? '' : 'none';
+  document.getElementById('viewOuverture').style.display = view === 'ouverture' ? '' : 'none';
+  document.getElementById('viewAnalyse').style.display = view === 'analyse' ? '' : 'none';
   document.getElementById('viewCloture').style.display = view === 'cloture' ? '' : 'none';
   document.getElementById('viewStatistique').style.display = view === 'statistique' ? '' : 'none';
   document.getElementById('viewNotes').style.display = view === 'notes' ? '' : 'none';
@@ -1428,12 +3140,30 @@ function showView(view){
   document.getElementById('navParametres').classList.toggle('active', view === 'parametres');
   document.getElementById('navCaisse').classList.toggle('active', view === 'caisse');
   document.getElementById('navAgenda').classList.toggle('active', view === 'agenda');
+  document.getElementById('navOuverture').classList.toggle('active', view === 'ouverture');
+  document.getElementById('navAnalyse').classList.toggle('active', view === 'analyse');
   document.getElementById('navCloture').classList.toggle('active', view === 'cloture');
   document.getElementById('navStatistique').classList.toggle('active', view === 'statistique');
   document.getElementById('navNotes').classList.toggle('active', view === 'notes');
   document.getElementById('caisseBottomTabs').classList.toggle('show', view === 'caisse');
   document.body.classList.toggle('has-bottom-tabs', view === 'caisse');
+  document.getElementById('mainContainer').classList.toggle('main-wide', view === 'caisse' || view === 'agenda' || view === 'cloture');
   closeNav();
+  if (view === 'caisse' || view === 'agenda'){
+    requestAnimationFrame(() => {
+      renderMiniCalendar();
+      renderRdvDayList();
+    });
+  }
+  if (view === 'analyse'){
+    loadAnalyseData();
+  }
+  if (view === 'ouverture'){
+    loadOuvertureCaisse();
+  }
+  if (view === 'cloture'){
+    loadCloture();
+  }
 
   if (view === 'parametres'){
     renderParamTabs();
@@ -1636,8 +3366,13 @@ function updateCartAnimal(idx, val){
 }
 
 function removeCartItem(idx){
+  const item = cart[idx];
+  if (item && item.Type === 'Remise' && item.Libelle && item.Libelle.indexOf('Remise fidélité') === 0){
+    fideliteAppliqueeClientId = null;
+  }
   cart.splice(idx, 1);
   renderCart();
+  if (caisseCurrentClientId) updateFideliteDisplay(caisseCurrentClientId);
 }
 
 // ---------- Remise sur une ligne ----------
@@ -1717,11 +3452,11 @@ function pickCaisseTempClient(idClient){
 }
 
 document.getElementById('caisseModalSearch').addEventListener('input', (e) => {
-  const q = e.target.value.trim().toLowerCase();
+  const q = normalizeSearch(e.target.value.trim());
   caisseModalFilteredList = !q ? [] : clients.filter(c =>
-    (c.Nom || '').toLowerCase().includes(q) ||
-    (c.Prenom || '').toLowerCase().includes(q) ||
-    (c.Adresse || '').toLowerCase().includes(q)
+    normalizeSearch(c.Nom).includes(q) ||
+    normalizeSearch(c.Prenom).includes(q) ||
+    normalizeSearch(c.Adresse).includes(q)
   );
   renderCaisseModalClientList(caisseModalFilteredList);
 });
@@ -1908,13 +3643,15 @@ document.getElementById('btnValiderMontantPaiement').addEventListener('click', a
 });
 
 async function finaliserVente(){
-  const totalRendu = paiementLignesFinal.reduce((sum, l) => sum + (l.rendu || 0), 0);
   const totalDu = paiementLignesFinal.reduce((sum, l) => sum + (l.montant || 0), 0);
 
   const moyenLabel = paiementLignesFinal.map(l => {
-    const label = l.type === 'Especes' ? 'Espèces' : l.type;
-    return `${label} ${l.montant.toFixed(2)}€`;
+    return l.type === 'Especes' ? 'Espèces' : l.type;
   }).join(' + ');
+
+  const sommeParType = (type) => paiementLignesFinal
+    .filter(l => l.type === type)
+    .reduce((sum, l) => sum + (l.montant || 0), 0);
 
   const cl = caisseCurrentClientId ? clients.find(c => c.ID_Client === caisseCurrentClientId) : null;
 
@@ -1923,7 +3660,9 @@ async function finaliserVente(){
     Client_Nom: cl ? `${cl.Prenom || ''} ${cl.Nom || ''}`.trim() : '',
     Total: totalDu,
     Moyen_Paiement: moyenLabel,
-    Rendu_Monnaie: totalRendu,
+    Montant_Especes: sommeParType('Especes'),
+    Montant_CB: sommeParType('CB'),
+    Montant_Cheque: sommeParType('Cheque'),
     Lignes: cart.map(item => ({
       Type: item.Type,
       Libelle: item.Libelle,
@@ -1938,6 +3677,22 @@ async function finaliserVente(){
   if (res.error){ toast('Erreur : ' + res.error); return; }
 
   toast('Vente enregistrée ✓');
+
+  if (cl) {
+    const pointsGagnes = Math.ceil(totalDu);
+    cl.Points = (parseInt(cl.Points, 10) || 0) + pointsGagnes;
+    cl.Points_Cumules = (parseInt(cl.Points_Cumules, 10) || 0) + pointsGagnes;
+
+    if (fideliteAppliqueeClientId === cl.ID_Client) {
+      const resFid = await apiPost('utiliserPointsFidelite', { ID_Client: cl.ID_Client });
+      if (resFid.error) {
+        toast('Attention, la remise fidélité n\'a pas pu être validée : ' + resFid.error);
+      } else {
+        cl.Points = 0;
+      }
+    }
+  }
+  fideliteAppliqueeClientId = null;
 
   cart = [];
   paiementLignesFinal = [];
@@ -1968,83 +3723,47 @@ function fillCaisseClientCard(idClient){
   updateFideliteDisplay(idClient);
 }
 
-async function updateFideliteDisplay(idClient){
+const SEUIL_POINTS_FIDELITE = 200;
+const MONTANT_REMISE_FIDELITE = 10;
+let fideliteAppliqueeClientId = null; // marque l'intention d'utiliser la remise ; le solde n'est remis a 0 cote serveur qu'a l'encaissement reussi
+
+function updateFideliteDisplay(idClient){
   const cl = clients.find(c => c.ID_Client === idClient);
   const box = document.getElementById('caisseFideliteBox');
   if (!cl){ box.innerHTML = ''; return; }
 
-  const ventes = await apiGet('getVentes', { id_client: idClient });
-  if (ventes && ventes.error){
-    box.innerHTML = `<div class="fidelite-line" style="color:#B0453B;">Fidélité indisponible (${ventes.error})</div>`;
-    return;
-  }
-
-  const visites = ventes.length;
-  const recompensesUtilisees = parseInt(cl.Recompenses_Utilisees, 10) || 0;
-  const progres = visites - (recompensesUtilisees * 10);
-  const eligible = progres >= 10;
-
-  const last10 = ventes.slice(-10);
-  const panierMoyen = last10.length
-    ? last10.reduce((sum, v) => sum + (parseFloat(v.Total) || 0), 0) / last10.length
-    : 0;
+  const points = parseInt(cl.Points, 10) || 0;
+  const eligible = points >= SEUIL_POINTS_FIDELITE;
+  const dejaAppliquee = fideliteAppliqueeClientId === idClient;
 
   box.innerHTML = `
-    <div class="fidelite-line">Fidélité : ${Math.min(progres, 10)}/10 visites</div>
-    ${eligible ? `
+    <div class="fidelite-line">Fidélité : ${points} / ${SEUIL_POINTS_FIDELITE} points</div>
+    ${eligible && !dejaAppliquee ? `
       <div class="fidelite-banner">
-        🎉 Récompense fidélité disponible<br>
-        Panier moyen (10 dern. ventes) : ${panierMoyen.toFixed(2)} €
-        <button class="btn btn-primary btn-small" style="margin-top:8px;width:100%;" onclick="openFideliteModal('${idClient}')">Utiliser la fidélité</button>
+        🎉 Remise fidélité disponible : ${MONTANT_REMISE_FIDELITE} €
+        <button class="btn btn-primary btn-small" style="margin-top:8px;width:100%;" onclick="appliquerRemiseFidelite('${idClient}')">Utiliser la remise (${MONTANT_REMISE_FIDELITE} €)</button>
       </div>
     ` : ''}
+    ${dejaAppliquee ? `<div class="fidelite-line" style="color:#2E7D32;">Remise fidélité ajoutée au panier ✓</div>` : ''}
   `;
 }
 
 // ---------- Remise fidelite ----------
-let caisseFideliteClientId = null;
-
-function openFideliteModal(idClient){
-  caisseFideliteClientId = idClient;
-  document.getElementById('fideliteType').value = 'montant';
-  document.getElementById('fideliteValeur').value = '';
-  document.getElementById('overlayFidelite').classList.add('show');
-}
-
-document.getElementById('btnCancelFidelite').addEventListener('click', () => {
-  document.getElementById('overlayFidelite').classList.remove('show');
-});
-
-document.getElementById('btnValidateFidelite').addEventListener('click', async () => {
-  const idClient = caisseFideliteClientId;
-  if (!idClient) return;
-
-  const type = document.getElementById('fideliteType').value;
-  const val = parseFloat(document.getElementById('fideliteValeur').value) || 0;
-
-  if (!val){ toast('Entre une valeur'); return; }
-
-  const totalActuel = cart.reduce((sum, i) => sum + (computeFinalPrice(i) * i.Quantite), 0);
-  const montantRemise = type === 'pourcentage' ? (totalActuel * val / 100) : val;
-  const libelleRemise = type === 'pourcentage' ? `Remise fidélité (-${val}%)` : `Remise fidélité (-${val.toFixed(2)} €)`;
-
-  cart.push({ Type: 'Remise', Libelle: libelleRemise, Prix: -Math.abs(montantRemise), Quantite: 1, Animal: '' });
+// Ajoute la ligne de remise au panier immediatement (visible, modifiable),
+// mais NE remet PAS les points a 0 cote serveur : ca ne se fait qu'a l'encaissement reussi
+// (finaliserVente), pour ne pas perdre les points si la vente est annulee/corrigee avant.
+function appliquerRemiseFidelite(idClient){
+  cart.push({ Type: 'Remise', Libelle: `Remise fidélité (-${MONTANT_REMISE_FIDELITE.toFixed(2)} €)`, Prix: -MONTANT_REMISE_FIDELITE, Quantite: 1, Animal: '' });
   renderCart();
 
-  toast('Mise à jour de la fidélité...');
-  const res = await apiPost('incrementRecompense', { ID_Client: idClient });
-  if (res.error){ toast('Erreur : ' + res.error); }
-
-  const cl = clients.find(c => c.ID_Client === idClient);
-  if (cl && res.recompenses !== undefined){ cl.Recompenses_Utilisees = res.recompenses; }
-
-  document.getElementById('overlayFidelite').classList.remove('show');
-  toast('Remise fidélité appliquée ✓');
+  fideliteAppliqueeClientId = idClient;
   updateFideliteDisplay(idClient);
-});
+  toast('Remise fidélité ajoutée au panier (validée à l\'encaissement)');
+}
 
 function dissocierCaisseClient(){
   caisseCurrentClientId = null;
+  fideliteAppliqueeClientId = null;
   cart = [];
   renderCart();
   document.getElementById('caisseClientNom').textContent = 'Nom : —';
