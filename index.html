@@ -70,7 +70,7 @@
   }
 
   main{ max-width:640px; margin:0 auto; padding:16px; }
-  main.main-wide{ max-width:1450px; margin:0 auto 0 0; }
+  main.main-wide{ max-width:1900px; margin:0 auto; }
 
   .toolbar{
     display:flex;
@@ -487,19 +487,39 @@
     align-items:flex-start;
   }
   .caisse-sidebar{
-    width:350px;
-    flex-shrink:0;
+    flex:1 1 320px;
+    min-width:300px;
+    max-width:460px;
     display:flex;
     flex-direction:column;
     gap:12px;
   }
   .caisse-main{
-    flex:1;
+    flex:1.6 1 480px;
     min-width:0;
+  }
+  .caisse-notes-sidebar{
+    flex:1 1 280px;
+    min-width:260px;
+    max-width:420px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .caisse-notes-sidebar .note-card{
+    margin-bottom:0;
+  }
+  .caisse-notes-sidebar #caisseNotesList{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    max-height:calc(100vh - 340px);
+    overflow-y:auto;
   }
   @media (max-width: 900px){
     .caisse-layout{ flex-direction:column; }
-    .caisse-sidebar{ width:100%; }
+    .caisse-sidebar{ width:100%; max-width:none; }
+    .caisse-notes-sidebar{ width:100%; max-width:none; }
   }
 
   .mini-calendar-card{
@@ -1101,6 +1121,17 @@
 </head>
 <body>
 
+<div id="appLoginOverlay" style="display:none;position:fixed;inset:0;background:var(--cream);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:20px;">
+  <svg class="paw" viewBox="0 0 64 64" fill="currentColor" style="width:44px;height:44px;color:var(--sage);">
+    <ellipse cx="32" cy="42" rx="15" ry="12"/><ellipse cx="14" cy="24" rx="7" ry="9"/>
+    <ellipse cx="50" cy="24" rx="7" ry="9"/><ellipse cx="24" cy="12" rx="6" ry="8"/><ellipse cx="40" cy="12" rx="6" ry="8"/>
+  </svg>
+  <h1 style="margin:0;font-size:1.1rem;">Au BouBou de Lulu</h1>
+  <input type="password" id="appPasswordInput" placeholder="Mot de passe" style="max-width:260px;text-align:center;" onkeydown="if(event.key==='Enter') checkAppPassword()">
+  <button class="btn btn-primary" onclick="checkAppPassword()">Entrer</button>
+  <div id="appLoginError" style="display:none;color:#B0453B;font-size:0.85rem;">Mot de passe incorrect</div>
+</div>
+
 <header>
   <div class="header-datetime" id="headerDateTime"></div>
   <div class="header-main">
@@ -1131,7 +1162,7 @@
     <div class="nav-item" id="navOuverture" onclick="showView('ouverture')">🧾 Ouverture caisse</div>
     <div class="nav-item" id="navAnalyse" onclick="showView('analyse')">📈 Analyse</div>
     <div class="nav-item" id="navCloture" onclick="showView('cloture')">🔒 Clôture</div>
-    <div class="nav-item" id="navStatistique" onclick="showView('statistique')">📊 Statistique</div>
+    <div class="nav-item" id="navCompta" onclick="showView('compta')">📊 Compta</div>
     <div class="nav-item" id="navParametres" onclick="showView('parametres')">⚙️ Paramètres</div>
   </div>
 </div>
@@ -1152,7 +1183,7 @@
   <div id="viewParametres" style="display:none">
     <div class="param-tabs" id="paramTabs"></div>
 
-    <div class="card" style="padding:14px 16px;margin-bottom:14px;">
+    <div class="card" id="paramAddCard" style="padding:14px 16px;margin-bottom:14px;">
       <div class="section-title"><span>Ajouter une valeur</span></div>
       <div class="field-row" id="paramParentRow" style="display:none">
         <label>Espèce</label>
@@ -1162,10 +1193,36 @@
         <div class="field-row"><label>Valeur</label><input id="paramValueInput" type="text"></div>
         <div class="field-row" id="paramPriceRow" style="display:none"><label>Prix (€)</label><input id="paramPriceInput" type="number" step="0.5" min="0"></div>
       </div>
+      <div class="field-row" id="paramDureeRow" style="display:none"><label>Durée (min)</label><input id="paramDureeInput" type="number" step="5" min="0"></div>
       <button class="btn btn-primary" style="width:100%;margin-top:12px;" id="btnAddParam">+ Ajouter</button>
     </div>
 
     <div id="paramList"></div>
+
+    <div class="card" id="securiteCard" style="display:none;padding:14px 16px;margin-bottom:14px;">
+      <div class="section-title"><span>Accès protégé par mot de passe</span></div>
+      <div class="meta" style="font-size:0.78rem;color:var(--ink-soft);margin-bottom:10px;">Le même mot de passe protège l'accès général et la page Compta. Toute modification ci-dessous demande de saisir le mot de passe actuel.</div>
+
+      <div class="field-row"><label>Mot de passe actuel</label><input type="password" id="secuCurrentPassword"></div>
+
+      <div class="field-row" style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" id="chkAppAccess" style="width:auto;">
+        <label style="margin:0;font-size:0.9rem;text-transform:none;font-weight:600;">Protéger l'accès général à l'application</label>
+      </div>
+      <div class="field-row" style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" id="chkComptaAccess" style="width:auto;">
+        <label style="margin:0;font-size:0.9rem;text-transform:none;font-weight:600;">Protéger la page Compta</label>
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="saveSecuriteToggles()">Enregistrer les réglages</button>
+      <div id="secuTogglesMsg" class="meta" style="font-size:0.8rem;margin-top:6px;"></div>
+
+      <div style="margin-top:18px;border-top:1px solid var(--line);padding-top:14px;">
+        <div class="section-title"><span>Changer le mot de passe</span></div>
+        <div class="field-row"><label>Nouveau mot de passe</label><input type="password" id="secuNewPassword"></div>
+        <button class="btn btn-primary" style="width:100%;margin-top:12px;" onclick="changeSecuritePassword()">Enregistrer le nouveau mot de passe</button>
+        <div id="secuPasswordMsg" class="meta" style="font-size:0.8rem;margin-top:8px;"></div>
+      </div>
+    </div>
   </div>
 
   <div id="viewAgenda" style="display:none">
@@ -1204,6 +1261,7 @@
       <button class="analyse-subnav-btn" id="analyseSubCheque" onclick="showAnalyseSub('cheque')">Chèque</button>
       <button class="analyse-subnav-btn" id="analyseSubEspece" onclick="showAnalyseSub('espece')">Espèces</button>
       <button class="analyse-subnav-btn" id="analyseSubErreur" onclick="showAnalyseSub('erreur')">Erreur paiement</button>
+      <button class="analyse-subnav-btn" id="analyseSubAnnuler" onclick="showAnalyseSub('annuler')">Annuler vente</button>
     </div>
     <div id="analyseContent"></div>
   </div>
@@ -1214,7 +1272,7 @@
         <label>Date</label>
         <input type="date" id="clotureDateInput" onchange="onClotureDateChange()">
       </div>
-      <button class="btn btn-primary no-print" onclick="window.print()">🖨️ Clôturer la caisse (PDF)</button>
+      <button class="btn btn-primary no-print" onclick="imprimerCloture()">🖨️ Clôturer la caisse (PDF)</button>
     </div>
 
     <div class="cloture-layout">
@@ -1322,13 +1380,26 @@
     </div>
   </div>
 
-  <div id="viewStatistique" style="display:none">
-    <div class="empty">
-      <svg class="paw" viewBox="0 0 64 64" fill="currentColor" style="display:block;margin:0 auto 8px">
+  <div id="viewCompta" style="display:none">
+    <div id="comptaLoginScreen" style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:60px 20px;">
+      <svg class="paw" viewBox="0 0 64 64" fill="currentColor" style="width:40px;height:40px;opacity:0.3;">
         <ellipse cx="32" cy="42" rx="15" ry="12"/><ellipse cx="14" cy="24" rx="7" ry="9"/>
         <ellipse cx="50" cy="24" rx="7" ry="9"/><ellipse cx="24" cy="12" rx="6" ry="8"/><ellipse cx="40" cy="12" rx="6" ry="8"/>
       </svg>
-      Statistique — à construire.
+      <div class="section-title" style="margin:0;">Accès Comptabilité</div>
+      <input type="password" id="comptaPasswordInput" placeholder="Mot de passe" style="max-width:260px;text-align:center;" onkeydown="if(event.key==='Enter') checkComptaPassword()">
+      <button class="btn btn-primary" onclick="checkComptaPassword()">Valider</button>
+      <div id="comptaLoginError" style="display:none;color:#B0453B;font-size:0.85rem;">Mot de passe incorrect</div>
+    </div>
+
+    <div id="comptaContent" style="display:none">
+      <div class="empty">
+        <svg class="paw" viewBox="0 0 64 64" fill="currentColor" style="display:block;margin:0 auto 8px">
+          <ellipse cx="32" cy="42" rx="15" ry="12"/><ellipse cx="14" cy="24" rx="7" ry="9"/>
+          <ellipse cx="50" cy="24" rx="7" ry="9"/><ellipse cx="24" cy="12" rx="6" ry="8"/><ellipse cx="40" cy="12" rx="6" ry="8"/>
+        </svg>
+        Compta — à construire.
+      </div>
     </div>
   </div>
 
@@ -1382,6 +1453,15 @@
       <div id="cartEmpty" class="meta" style="color:var(--ink-soft);font-size:0.85rem;">Panier vide</div>
     </div>
     </div>
+    <aside class="caisse-notes-sidebar">
+      <div class="card" style="padding:14px 16px;">
+        <div class="section-title"><span id="caisseNoteFormTitle">Notes</span></div>
+        <input type="hidden" id="caisseNoteEditId">
+        <textarea id="caisseNoteContenu" rows="3" placeholder="Écris ta note ici..."></textarea>
+        <button class="btn btn-primary" style="width:100%;margin-top:10px;" id="btnAddCaisseNote">+ Ajouter</button>
+      </div>
+      <div id="caisseNotesList"></div>
+    </aside>
    </div>
   </div>
 </main>
@@ -1582,7 +1662,6 @@
         <button type="button" class="btn btn-ghost btn-small" style="flex-shrink:0;" onclick="openClientModalFromRdv()">+ Client</button>
       </div>
       <div id="rdvClientList" style="max-height:26vh;overflow-y:auto;border-radius:10px;"></div>
-      <div id="rdvClientSelected" class="meta" style="font-size:0.82rem;color:var(--sage-dark);font-weight:700;margin-top:4px;"></div>
     </div>
     <div class="field-row" id="rdvAnimalRow" style="display:none;">
       <label>Animal</label>
@@ -1616,6 +1695,7 @@ let clients = [];
 let animauxParClient = {};
 let parametres = [];
 let rendezVous = [];
+let securiteSettings = { appAccessEnabled: false, comptaAccessEnabled: true };
 
 // ---------- API helpers ----------
 async function apiGet(action, params){
@@ -1639,6 +1719,80 @@ async function apiPost(action, data){
     return await res.json();
   } catch (err){
     return { error: 'Connexion impossible (' + action + ') : ' + err.message };
+  }
+}
+
+// ---------- Compta : protection par mot de passe (vérifiée côté Apps Script) ----------
+function showComptaLoginScreen(){
+  document.getElementById('comptaLoginScreen').style.display = 'flex';
+  document.getElementById('comptaContent').style.display = 'none';
+  document.getElementById('comptaPasswordInput').value = '';
+  document.getElementById('comptaLoginError').style.display = 'none';
+}
+
+function showComptaContent(){
+  document.getElementById('comptaLoginScreen').style.display = 'none';
+  document.getElementById('comptaContent').style.display = 'block';
+}
+
+function handleComptaViewShow(){
+  if (!securiteSettings.comptaAccessEnabled){
+    showComptaContent();
+    return;
+  }
+  if (sessionStorage.getItem('comptaUnlocked') === 'true'){
+    showComptaContent();
+  } else {
+    showComptaLoginScreen();
+  }
+}
+
+async function checkComptaPassword(){
+  const password = document.getElementById('comptaPasswordInput').value;
+  if (!password) return;
+
+  const res = await apiPost('checkComptaPassword', { password });
+  if (res.error){ toast('Erreur : ' + res.error); return; }
+
+  if (res.success){
+    sessionStorage.setItem('comptaUnlocked', 'true');
+    showComptaContent();
+  } else {
+    document.getElementById('comptaLoginError').style.display = 'block';
+  }
+}
+
+// ---------- Accès général à l'app (même mot de passe, protection activable/désactivable) ----------
+async function initAppGate(){
+  const settings = await apiGet('getSecuriteSettings');
+  if (settings && !settings.error){
+    securiteSettings = settings;
+  }
+
+  if (securiteSettings.appAccessEnabled && sessionStorage.getItem('appUnlocked') !== 'true'){
+    document.getElementById('appLoginOverlay').style.display = 'flex';
+  } else {
+    startApp();
+  }
+}
+
+function startApp(){
+  loadAll().then(() => showView('caisse'));
+}
+
+async function checkAppPassword(){
+  const password = document.getElementById('appPasswordInput').value;
+  if (!password) return;
+
+  const res = await apiPost('checkComptaPassword', { password });
+  if (res.error){ toast('Erreur : ' + res.error); return; }
+
+  if (res.success){
+    sessionStorage.setItem('appUnlocked', 'true');
+    document.getElementById('appLoginOverlay').style.display = 'none';
+    startApp();
+  } else {
+    document.getElementById('appLoginError').style.display = 'block';
   }
 }
 
@@ -1845,17 +1999,39 @@ function renderClotureDenomTable(){
     CLOTURE_DENOMINATIONS.slice(6).map(rowHtml).join('');
 }
 
+// Renomme temporairement l'onglet en "cloture_YYYY-MM-DD" avant l'impression : la plupart des
+// navigateurs (Chrome/Edge) reprennent ce titre comme nom de fichier suggere dans la boite de
+// dialogue "Enregistrer en PDF". Le titre d'origine est restaure juste apres.
+function imprimerCloture(){
+  const previousTitle = document.title;
+  const dateStr = clotureSelectedDate || todayStr(); // deja au format 'YYYY-MM-DD'
+  document.title = 'cloture_' + dateStr;
+
+  function restore(){
+    document.title = previousTitle;
+    window.removeEventListener('afterprint', restore);
+  }
+  window.addEventListener('afterprint', restore);
+
+  window.print();
+}
+
 function updateClotureTheorique(){
   if (!clotureVentesAll) return;
 
-  const ventesDuJour = clotureVentesAll.filter(v => normalizeDateStr(v.Date) === clotureSelectedDate && v.Statut !== 'Annulee');
+  const ventesDuJour = clotureVentesAll.filter(v => normalizeDateStr(v.Date) === clotureSelectedDate && v.Statut !== 'Annulée');
   const recap = computeAnalyseRecap(ventesDuJour);
 
   const especes = recap.find(r => r.key === 'Especes');
   const cheque = recap.find(r => r.key === 'Cheque');
   const cb = recap.find(r => r.key === 'CB');
 
-  document.getElementById('clotureTheoEspeces').textContent = especes.total.toFixed(2) + ' €';
+  // Le theorique en especes doit inclure le fond de caisse du jour (deja physiquement
+  // dans le tiroir), sinon la comparaison avec le compte physique (qui lui inclut le fond) est faussee.
+  const fondEntry = (ouvertureCaisseData || []).find(o => normalizeDateStr(o.Date) === clotureSelectedDate);
+  const fond = fondEntry ? (parseFloat(fondEntry.Somme) || 0) : 0;
+
+  document.getElementById('clotureTheoEspeces').textContent = (especes.total + fond).toFixed(2) + ' €';
   document.getElementById('clotureTheoCheque').textContent = cheque.total.toFixed(2) + ' €';
   document.getElementById('clotureTheoCB').textContent = cb.total.toFixed(2) + ' €';
 
@@ -1998,7 +2174,7 @@ function computeAnalyseRecap(ventes){
   // Les ventes annulees (erreur de paiement corrigee par recreation) ne doivent jamais
   // compter dans les totaux : leurs montants d'origine restent inscrits pour tracabilite
   // mais sont exclus de toute analyse/cloture, seule la vente de remplacement compte.
-  const ventesActives = ventes.filter(v => v.Statut !== 'Annulee');
+  const ventesActives = ventes.filter(v => v.Statut !== 'Annulée');
 
   const methods = [
     { key: 'CB', label: 'CB', field: 'Montant_CB' },
@@ -2016,7 +2192,7 @@ function computeAnalyseRecap(ventes){
 function showAnalyseSub(tab){
   analyseSubTab = tab;
 
-  const idMap = { generale: 'analyseSubGenerale', cb: 'analyseSubCB', cheque: 'analyseSubCheque', espece: 'analyseSubEspece', erreur: 'analyseSubErreur' };
+  const idMap = { generale: 'analyseSubGenerale', cb: 'analyseSubCB', cheque: 'analyseSubCheque', espece: 'analyseSubEspece', erreur: 'analyseSubErreur', annuler: 'analyseSubAnnuler' };
   document.querySelectorAll('.analyse-subnav-btn').forEach(b => b.classList.remove('active'));
   const btn = document.getElementById(idMap[tab]);
   if (btn) btn.classList.add('active');
@@ -2034,6 +2210,10 @@ function renderAnalyseContent(){
 
   if (analyseSubTab === 'erreur'){
     renderErreurPaiementTab();
+    return;
+  }
+  if (analyseSubTab === 'annuler'){
+    renderAnnulerVenteTab();
     return;
   }
 
@@ -2158,7 +2338,7 @@ function onAnalyseErreurSearch(){
   resultsBox.innerHTML = matches.length
     ? matches.map(v => `
         <div class="rdv-client-result" onclick="pickErreurVente('${v.ID_Vente}')">
-          <strong>${v.ID_Vente}</strong> — ${formatDateFR(normalizeDateStr(v.Date))} — ${v.Client_Nom || '—'} — ${(parseFloat(v.Total) || 0).toFixed(2)} € (${v.Moyen_Paiement || '—'})${v.Statut === 'Annulee' ? ' <span style="color:#B0453B;font-weight:700;">— Annulée</span>' : ''}
+          <strong>${v.ID_Vente}</strong> — ${formatDateFR(normalizeDateStr(v.Date))} — ${v.Client_Nom || '—'} — ${(parseFloat(v.Total) || 0).toFixed(2)} € (${v.Moyen_Paiement || '—'})${v.Statut === 'Annulée' ? ' <span style="color:#B0453B;font-weight:700;">— Annulée</span>' : ''}
         </div>
       `).join('')
     : '<div class="meta" style="font-size:0.82rem;color:var(--ink-soft);padding:6px;">Aucun résultat.</div>';
@@ -2174,7 +2354,7 @@ function pickErreurVente(idVente){
 
   const total = (parseFloat(v.Total) || 0).toFixed(2);
 
-  if (v.Statut === 'Annulee'){
+  if (v.Statut === 'Annulée'){
     document.getElementById('analyseErreurDetail').innerHTML = `
       <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line);">
         <div class="rdv-client">${v.Client_Nom || '—'} — ${total} €</div>
@@ -2218,6 +2398,111 @@ async function applyErreurCorrection(nouveauMoyen){
   if (resVentes && !resVentes.error){ analyseVentes = resVentes; }
 
   renderErreurPaiementTab();
+}
+
+// ---------- Onglet "Annuler vente" : recherche une vente et la passe en Annulée ----------
+// Contrairement a la correction d'erreur de paiement, on ne recree pas de nouvelle vente :
+// on marque juste la vente existante comme Annulée (elle sort alors des totaux/analyses/cloture),
+// sans jamais supprimer la ligne ni modifier les montants d'origine (traçabilité).
+let analyseAnnulerSelectedId = null;
+
+function renderAnnulerVenteTab(){
+  const container = document.getElementById('analyseContent');
+  analyseAnnulerSelectedId = null;
+
+  container.innerHTML = `
+    <div class="analyse-detail-card">
+      <div class="header-label" style="margin-bottom:4px;">Annuler une vente</div>
+      <div class="meta" style="font-size:0.78rem;color:var(--ink-soft);margin-bottom:8px;">
+        La vente n'est jamais supprimée : elle passe au statut "Annulée" et sort des totaux, de l'analyse et de la clôture.
+      </div>
+      <div class="search-wrap" style="margin-bottom:6px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="analyseAnnulerSearch" type="text" placeholder="N° de vente ou nom du client..." oninput="onAnalyseAnnulerSearch()">
+      </div>
+      <div id="analyseAnnulerResults"></div>
+      <div id="analyseAnnulerDetail"></div>
+    </div>
+  `;
+}
+
+function onAnalyseAnnulerSearch(){
+  const q = normalizeSearch(document.getElementById('analyseAnnulerSearch').value.trim());
+  const resultsBox = document.getElementById('analyseAnnulerResults');
+  document.getElementById('analyseAnnulerDetail').innerHTML = '';
+  analyseAnnulerSelectedId = null;
+
+  if (!q){ resultsBox.innerHTML = ''; return; }
+
+  const matches = analyseVentes
+    .filter(v => normalizeSearch(v.ID_Vente).includes(q) || normalizeSearch(v.Client_Nom).includes(q))
+    .sort((a, b) => normalizeDateStr(b.Date).localeCompare(normalizeDateStr(a.Date)))
+    .slice(0, 15);
+
+  resultsBox.innerHTML = matches.length
+    ? matches.map(v => `
+        <div class="rdv-client-result" onclick="pickAnnulerVente('${v.ID_Vente}')">
+          <strong>${v.ID_Vente}</strong> — ${formatDateFR(normalizeDateStr(v.Date))} — ${v.Client_Nom || '—'} — ${(parseFloat(v.Total) || 0).toFixed(2)} € (${v.Moyen_Paiement || '—'})${v.Statut === 'Annulée' ? ' <span style="color:#B0453B;font-weight:700;">— Annulée</span>' : ''}
+        </div>
+      `).join('')
+    : '<div class="meta" style="font-size:0.82rem;color:var(--ink-soft);padding:6px;">Aucun résultat.</div>';
+}
+
+function pickAnnulerVente(idVente){
+  const v = analyseVentes.find(x => x.ID_Vente === idVente);
+  if (!v) return;
+
+  analyseAnnulerSelectedId = idVente;
+  document.getElementById('analyseAnnulerResults').innerHTML = '';
+  document.getElementById('analyseAnnulerSearch').value = `${v.ID_Vente} — ${v.Client_Nom || ''}`;
+
+  const total = (parseFloat(v.Total) || 0).toFixed(2);
+
+  if (v.Statut === 'Annulée'){
+    document.getElementById('analyseAnnulerDetail').innerHTML = `
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line);">
+        <div class="rdv-client">${v.Client_Nom || '—'} — ${total} €</div>
+        <div class="rdv-detail">${formatDateFR(normalizeDateStr(v.Date))} · ${v.Moyen_Paiement || '—'}</div>
+        <div class="meta" style="color:#B0453B;font-weight:700;margin-top:6px;">Vente déjà annulée</div>
+        <div class="meta" style="color:var(--ink-soft);font-size:0.82rem;">${v.Commentaire || ''}</div>
+      </div>
+    `;
+    return;
+  }
+
+  document.getElementById('analyseAnnulerDetail').innerHTML = `
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line);">
+      <div class="rdv-item" style="border-bottom:none;padding:0 0 10px;">
+        <div class="rdv-info">
+          <div class="rdv-client">${v.Client_Nom || '—'} — ${total} €</div>
+          <div class="rdv-detail">${formatDateFR(normalizeDateStr(v.Date))} · ${v.Moyen_Paiement || '—'}</div>
+        </div>
+      </div>
+      <div class="field-row" style="margin-bottom:10px;">
+        <label>Motif (optionnel)</label>
+        <input id="analyseAnnulerMotif" type="text" placeholder="Ex : erreur de saisie, client remboursé...">
+      </div>
+      <button class="btn btn-ghost btn-small" style="color:#B0453B;border-color:#B0453B;" onclick="applyAnnulerVente()">Confirmer l'annulation</button>
+    </div>
+  `;
+}
+
+async function applyAnnulerVente(){
+  if (!analyseAnnulerSelectedId) return;
+  if (!confirm('Confirmer l\'annulation de cette vente ? Elle ne pourra plus être modifiée ensuite.')) return;
+
+  const motif = document.getElementById('analyseAnnulerMotif').value.trim();
+
+  toast('Annulation en cours...');
+  const res = await apiPost('annulerVente', { ID_Vente: analyseAnnulerSelectedId, Motif: motif });
+  if (res.error){ toast('Erreur : ' + res.error); return; }
+
+  toast(`Vente ${analyseAnnulerSelectedId} annulée ✓`);
+
+  const resVentes = await apiGet('getVentes');
+  if (resVentes && !resVentes.error){ analyseVentes = resVentes; }
+
+  renderAnnulerVenteTab();
 }
 
 // ============================================
@@ -2554,7 +2839,6 @@ function openRdvModal(){
   rdvClientSelectedId = null;
   document.getElementById('rdvClientSearch').value = '';
   document.getElementById('rdvClientList').innerHTML = '';
-  document.getElementById('rdvClientSelected').textContent = '';
   document.getElementById('rdvAnimalRow').style.display = 'none';
 
   const prestations = parametres.filter(p => p.Type === 'Prestation').map(p => p.Valeur);
@@ -2590,7 +2874,6 @@ function openEditRdvModal(idRdv){
     // Client non retrouve dans la base (rare) : on garde au moins le nom tel quel
     rdvClientSelectedId = rdv.ID_Client || null;
     document.getElementById('rdvClientSearch').value = rdv.Client_Nom || '';
-    document.getElementById('rdvClientSelected').textContent = rdv.Client_Nom ? 'Client sélectionné : ' + rdv.Client_Nom : '';
     document.getElementById('rdvAnimalRow').style.display = 'none';
   }
 
@@ -2600,6 +2883,14 @@ function openEditRdvModal(idRdv){
 function closeRdvModal(){
   document.getElementById('overlayRdv').classList.remove('show');
 }
+
+// Prerempli la duree a partir de la colonne Temp du parametre Prestation choisi (reste modifiable ensuite)
+document.getElementById('rdvPrestation').addEventListener('change', (e) => {
+  const p = parametres.find(x => x.Type === 'Prestation' && x.Valeur === e.target.value);
+  if (p && p.Temp !== undefined && p.Temp !== '') {
+    document.getElementById('rdvDuree').value = p.Temp;
+  }
+});
 
 document.getElementById('rdvClientSearch').addEventListener('input', (e) => {
   const q = normalizeSearch(e.target.value.trim());
@@ -2621,7 +2912,6 @@ function pickRdvClient(idClient){
 
   rdvClientSelectedId = idClient;
   const nomComplet = `${cl.Prenom || ''} ${cl.Nom || ''}`.trim();
-  document.getElementById('rdvClientSelected').textContent = 'Client sélectionné : ' + nomComplet;
   document.getElementById('rdvClientList').innerHTML = '';
   document.getElementById('rdvClientSearch').value = nomComplet;
 
@@ -3134,7 +3424,7 @@ function showView(view){
   document.getElementById('viewOuverture').style.display = view === 'ouverture' ? '' : 'none';
   document.getElementById('viewAnalyse').style.display = view === 'analyse' ? '' : 'none';
   document.getElementById('viewCloture').style.display = view === 'cloture' ? '' : 'none';
-  document.getElementById('viewStatistique').style.display = view === 'statistique' ? '' : 'none';
+  document.getElementById('viewCompta').style.display = view === 'compta' ? '' : 'none';
   document.getElementById('viewNotes').style.display = view === 'notes' ? '' : 'none';
   document.getElementById('navClients').classList.toggle('active', view === 'clients');
   document.getElementById('navParametres').classList.toggle('active', view === 'parametres');
@@ -3143,17 +3433,23 @@ function showView(view){
   document.getElementById('navOuverture').classList.toggle('active', view === 'ouverture');
   document.getElementById('navAnalyse').classList.toggle('active', view === 'analyse');
   document.getElementById('navCloture').classList.toggle('active', view === 'cloture');
-  document.getElementById('navStatistique').classList.toggle('active', view === 'statistique');
+  document.getElementById('navCompta').classList.toggle('active', view === 'compta');
   document.getElementById('navNotes').classList.toggle('active', view === 'notes');
   document.getElementById('caisseBottomTabs').classList.toggle('show', view === 'caisse');
   document.body.classList.toggle('has-bottom-tabs', view === 'caisse');
   document.getElementById('mainContainer').classList.toggle('main-wide', view === 'caisse' || view === 'agenda' || view === 'cloture');
   closeNav();
+  if (view === 'compta'){
+    handleComptaViewShow();
+  }
   if (view === 'caisse' || view === 'agenda'){
     requestAnimationFrame(() => {
       renderMiniCalendar();
       renderRdvDayList();
     });
+  }
+  if (view === 'caisse'){
+    loadNotes();
   }
   if (view === 'analyse'){
     loadAnalyseData();
@@ -3176,32 +3472,116 @@ function showView(view){
 
 // ---------- Paramètres (races, prestations...) ----------
 const TYPE_CONFIG = {
-  Race: { parentType: 'Espece', priceField: false },
-  Prestation: { parentType: null, priceField: true }
+  Race: { parentType: 'Espece', priceField: false, dureeField: false },
+  Prestation: { parentType: null, priceField: true, dureeField: true }
 };
 let currentParamType = 'Race';
 
 function renderParamTabs(){
   const wrap = document.getElementById('paramTabs');
-  wrap.innerHTML = Object.keys(TYPE_CONFIG).map(t =>
+  const tabs = Object.keys(TYPE_CONFIG).map(t =>
     `<button class="tab-btn ${t === currentParamType ? 'active' : ''}" onclick="selectParamType('${t}')">${t}</button>`
   ).join('');
+  const secuTab = `<button class="tab-btn ${currentParamType === 'Securite' ? 'active' : ''}" onclick="selectParamType('Securite')">Sécurité</button>`;
+  wrap.innerHTML = tabs + secuTab;
 }
 
 function selectParamType(type){
   currentParamType = type;
   renderParamTabs();
+
+  if (type === 'Securite'){
+    document.getElementById('paramAddCard').style.display = 'none';
+    document.getElementById('paramList').style.display = 'none';
+    document.getElementById('securiteCard').style.display = 'block';
+    loadSecuriteSettingsIntoForm();
+    return;
+  }
+  document.getElementById('paramAddCard').style.display = '';
+  document.getElementById('paramList').style.display = '';
+  document.getElementById('securiteCard').style.display = 'none';
+
   renderParamList();
 
   const cfg = TYPE_CONFIG[type];
   document.getElementById('paramParentRow').style.display = cfg.parentType ? '' : 'none';
   document.getElementById('paramPriceRow').style.display = cfg.priceField ? '' : 'none';
+  document.getElementById('paramDureeRow').style.display = cfg.dureeField ? '' : 'none';
   if (cfg.parentType){
     const options = parametres.filter(p => p.Type === cfg.parentType).map(p => p.Valeur);
     fillSelect(document.getElementById('paramParentSelect'), options, 'Sélectionner');
   }
   document.getElementById('paramValueInput').value = '';
   document.getElementById('paramPriceInput').value = '';
+  document.getElementById('paramDureeInput').value = '';
+}
+
+function loadSecuriteSettingsIntoForm(){
+  document.getElementById('chkAppAccess').checked = !!securiteSettings.appAccessEnabled;
+  document.getElementById('chkComptaAccess').checked = !!securiteSettings.comptaAccessEnabled;
+  document.getElementById('secuCurrentPassword').value = '';
+  document.getElementById('secuNewPassword').value = '';
+  document.getElementById('secuTogglesMsg').textContent = '';
+  document.getElementById('secuPasswordMsg').textContent = '';
+}
+
+async function saveSecuriteToggles(){
+  const currentPassword = document.getElementById('secuCurrentPassword').value;
+  const msg = document.getElementById('secuTogglesMsg');
+
+  const payload = {
+    currentPassword,
+    appAccessEnabled: document.getElementById('chkAppAccess').checked,
+    comptaAccessEnabled: document.getElementById('chkComptaAccess').checked
+  };
+
+  const res = await apiPost('setSecuriteSettings', payload);
+  if (res.error){
+    msg.style.color = '#B0453B';
+    msg.textContent = res.error;
+    return;
+  }
+  if (!res.success){
+    msg.style.color = '#B0453B';
+    msg.textContent = 'Mot de passe actuel incorrect.';
+    loadSecuriteSettingsIntoForm();
+    return;
+  }
+
+  securiteSettings.appAccessEnabled = payload.appAccessEnabled;
+  securiteSettings.comptaAccessEnabled = payload.comptaAccessEnabled;
+  msg.style.color = '#2E7D32';
+  msg.textContent = 'Réglages enregistrés ✓';
+  document.getElementById('secuCurrentPassword').value = '';
+}
+
+async function changeSecuritePassword(){
+  const currentPassword = document.getElementById('secuCurrentPassword').value;
+  const newPassword = document.getElementById('secuNewPassword').value;
+  const msg = document.getElementById('secuPasswordMsg');
+
+  if (!newPassword){
+    msg.style.color = '#B0453B';
+    msg.textContent = 'Entre un nouveau mot de passe.';
+    return;
+  }
+
+  const res = await apiPost('changeSecuritePassword', { currentPassword, newPassword });
+  if (res.error){
+    msg.style.color = '#B0453B';
+    msg.textContent = res.error;
+    return;
+  }
+
+  if (res.success){
+    msg.style.color = '#2E7D32';
+    msg.textContent = 'Mot de passe modifié ✓';
+    document.getElementById('secuCurrentPassword').value = '';
+    document.getElementById('secuNewPassword').value = '';
+  } else {
+    msg.style.color = '#B0453B';
+    msg.textContent = 'Mot de passe actuel incorrect.';
+  }
 }
 
 function renderParamList(){
@@ -3216,7 +3596,7 @@ function renderParamList(){
   list.innerHTML = items.map(p => `
     <div class="param-item">
       <div>
-        <div class="val">${p.Valeur}${p.Prix ? ` — ${Number(p.Prix).toFixed(2)} €` : ''}</div>
+        <div class="val">${p.Valeur}${p.Prix ? ` — ${Number(p.Prix).toFixed(2)} €` : ''}${p.Temp ? ` — ${p.Temp} min` : ''}</div>
         ${p.Parent ? `<div class="sub">${p.Parent}</div>` : ''}
       </div>
       <button class="btn-delete" onclick="deleteParamItem('${p.ID}')">✕</button>
@@ -3238,13 +3618,15 @@ async function addParamItem(){
   const parent = cfg.parentType ? document.getElementById('paramParentSelect').value : '';
   if (cfg.parentType && !parent){ toast('Choisis ' + cfg.parentType); return; }
   const prix = cfg.priceField ? document.getElementById('paramPriceInput').value : '';
+  const duree = cfg.dureeField ? document.getElementById('paramDureeInput').value : '';
 
   toast('Ajout...');
-  const res = await apiPost('addParametre', { Type: currentParamType, Valeur: valeur, Parent: parent, Prix: prix });
+  const res = await apiPost('addParametre', { Type: currentParamType, Valeur: valeur, Parent: parent, Prix: prix, Temp: duree });
   if (res.error){ toast('Erreur : ' + res.error); return; }
 
   document.getElementById('paramValueInput').value = '';
   document.getElementById('paramPriceInput').value = '';
+  document.getElementById('paramDureeInput').value = '';
   toast('Ajouté ✓');
   await reloadParametres();
   renderParamList();
@@ -3664,7 +4046,10 @@ async function finaliserVente(){
     Montant_CB: sommeParType('CB'),
     Montant_Cheque: sommeParType('Cheque'),
     Lignes: cart.map(item => ({
-      Type: item.Type,
+      // Comptabilité : une Prestation est un service (colonne Type = "Service"),
+      // un article "Autre" est une vente de marchandise (colonne Type = "Vente").
+      // Une remise fidélité garde son type d'origine.
+      Type: item.Type === 'Prestation' ? 'Service' : (item.Type === 'Autre' ? 'Vente' : item.Type),
       Libelle: item.Libelle,
       Prix: computeFinalPrice(item),
       Quantite: item.Quantite,
@@ -3796,10 +4181,20 @@ function formatDateHeureFR(d){
     ' à ' + date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 }
 
+// Deux affichages partagent les mêmes notes : la page "Notes" du menu et
+// le widget de la page Caisse. `noteContexts` décrit les IDs de chacun.
+const noteContexts = {
+  notes:  { list: 'notesList',       contenu: 'noteContenu',       editId: 'noteEditId',       title: 'noteFormTitle',       btn: 'btnAddNote',       defaultTitle: 'Nouvelle note' },
+  caisse: { list: 'caisseNotesList', contenu: 'caisseNoteContenu', editId: 'caisseNoteEditId', title: 'caisseNoteFormTitle', btn: 'btnAddCaisseNote', defaultTitle: 'Notes' }
+};
+
 async function loadNotes(){
   const notes = await apiGet('getNotes');
   if (notes && notes.error){
-    document.getElementById('notesList').innerHTML = `<div class="meta" style="color:#B0453B;font-size:0.85rem;">Erreur : ${notes.error}</div>`;
+    Object.values(noteContexts).forEach(c => {
+      const el = document.getElementById(c.list);
+      if (el) el.innerHTML = `<div class="meta" style="color:#B0453B;font-size:0.85rem;">Erreur : ${notes.error}</div>`;
+    });
     return;
   }
   notesCache = notes || [];
@@ -3807,62 +4202,69 @@ async function loadNotes(){
 }
 
 function renderNotesList(notes){
-  const container = document.getElementById('notesList');
-  if (!notes.length){
-    container.innerHTML = '<div class="meta" style="color:var(--ink-soft);font-size:0.85rem;">Aucune note pour le moment.</div>';
-    return;
-  }
-
   const triees = notes.slice().sort((a, b) => new Date(b.Date) - new Date(a.Date));
 
-  container.innerHTML = triees.map(n => `
-    <div class="note-card">
-      <div class="note-header">
-        <div>
-          <div class="note-date">${formatDateHeureFR(n.Date)}</div>
-          <div class="note-contenu">${n.Contenu}</div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
-          <button class="btn-delete" onclick="deleteNoteItem('${n.ID_Note}')">✕</button>
-          <button class="btn btn-ghost btn-small" onclick="editNoteItem('${n.ID_Note}')">Modifier</button>
+  Object.keys(noteContexts).forEach(ctx => {
+    const container = document.getElementById(noteContexts[ctx].list);
+    if (!container) return;
+
+    if (!triees.length){
+      container.innerHTML = '<div class="meta" style="color:var(--ink-soft);font-size:0.85rem;">Aucune note pour le moment.</div>';
+      return;
+    }
+
+    container.innerHTML = triees.map(n => `
+      <div class="note-card">
+        <div class="note-header">
+          <div>
+            <div class="note-date">${formatDateHeureFR(n.Date)}</div>
+            <div class="note-contenu">${n.Contenu}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+            <button class="btn-delete" onclick="deleteNoteItem('${n.ID_Note}')">✕</button>
+            <button class="btn btn-ghost btn-small" onclick="editNoteItem('${n.ID_Note}','${ctx}')">Modifier</button>
+          </div>
         </div>
       </div>
-    </div>
-  `).join('');
+    `).join('');
+  });
 }
 
 let notesCache = [];
 
-function editNoteItem(idNote){
+function editNoteItem(idNote, ctx = 'notes'){
   const note = notesCache.find(n => n.ID_Note === idNote);
   if (!note) return;
+  const c = noteContexts[ctx];
 
-  document.getElementById('noteEditId').value = note.ID_Note;
-  document.getElementById('noteContenu').value = note.Contenu;
-  document.getElementById('noteFormTitle').textContent = 'Modifier la note';
-  document.getElementById('btnAddNote').textContent = 'Enregistrer les modifications';
-  document.getElementById('noteContenu').focus();
+  document.getElementById(c.editId).value = note.ID_Note;
+  document.getElementById(c.contenu).value = note.Contenu;
+  document.getElementById(c.title).textContent = 'Modifier la note';
+  document.getElementById(c.btn).textContent = 'Enregistrer les modifications';
+  document.getElementById(c.contenu).focus();
 }
 
-function resetNoteForm(){
-  document.getElementById('noteEditId').value = '';
-  document.getElementById('noteContenu').value = '';
-  document.getElementById('noteFormTitle').textContent = 'Nouvelle note';
-  document.getElementById('btnAddNote').textContent = '+ Ajouter';
+function resetNoteForm(ctx = 'notes'){
+  const c = noteContexts[ctx];
+  document.getElementById(c.editId).value = '';
+  document.getElementById(c.contenu).value = '';
+  document.getElementById(c.title).textContent = c.defaultTitle;
+  document.getElementById(c.btn).textContent = '+ Ajouter';
 }
 
-document.getElementById('btnAddNote').addEventListener('click', async () => {
-  const contenu = document.getElementById('noteContenu').value.trim();
+async function addOrUpdateNote(ctx = 'notes'){
+  const c = noteContexts[ctx];
+  const contenu = document.getElementById(c.contenu).value.trim();
   if (!contenu){ toast('Écris quelque chose avant d\'ajouter'); return; }
 
-  const editId = document.getElementById('noteEditId').value;
+  const editId = document.getElementById(c.editId).value;
 
   if (editId){
     toast('Enregistrement...');
     const res = await apiPost('updateNote', { ID_Note: editId, Contenu: contenu });
     if (res.error){ toast('Erreur : ' + res.error); return; }
 
-    resetNoteForm();
+    resetNoteForm(ctx);
     toast('Note modifiée ✓');
     loadNotes();
   } else {
@@ -3870,11 +4272,14 @@ document.getElementById('btnAddNote').addEventListener('click', async () => {
     const res = await apiPost('addNote', { Contenu: contenu });
     if (res.error){ toast('Erreur : ' + res.error); return; }
 
-    document.getElementById('noteContenu').value = '';
+    document.getElementById(c.contenu).value = '';
     toast('Note ajoutée ✓');
     loadNotes();
   }
-});
+}
+
+document.getElementById('btnAddNote').addEventListener('click', () => addOrUpdateNote('notes'));
+document.getElementById('btnAddCaisseNote').addEventListener('click', () => addOrUpdateNote('caisse'));
 
 async function deleteNoteItem(idNote){
   if (!confirm('Supprimer cette note ?')) return;
@@ -3891,7 +4296,7 @@ async function deleteNoteItem(idNote){
   loadNotes();
 }
 
-loadAll().then(() => showView('caisse'));
+initAppGate();
 </script>
 </body>
 </html>
