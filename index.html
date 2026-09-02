@@ -1118,6 +1118,8 @@
     .cloture-spacer{ height:8px !important; }
   }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
 
@@ -1213,6 +1215,10 @@
         <input type="checkbox" id="chkComptaAccess" style="width:auto;">
         <label style="margin:0;font-size:0.9rem;text-transform:none;font-weight:600;">Protéger la page Compta</label>
       </div>
+      <div class="field-row" style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" id="chkClotureAccess" style="width:auto;">
+        <label style="margin:0;font-size:0.9rem;text-transform:none;font-weight:600;">Protéger la clôture de caisse</label>
+      </div>
       <button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="saveSecuriteToggles()">Enregistrer les réglages</button>
       <div id="secuTogglesMsg" class="meta" style="font-size:0.8rem;margin-top:6px;"></div>
 
@@ -1272,7 +1278,8 @@
         <label>Date</label>
         <input type="date" id="clotureDateInput" onchange="onClotureDateChange()">
       </div>
-      <button class="btn btn-primary no-print" onclick="imprimerCloture()">🖨️ Clôturer la caisse (PDF)</button>
+      <button class="btn btn-primary no-print" onclick="demanderClotureCaisse()">💾 Clôturer la caisse (enregistrer)</button>
+      <button class="btn no-print" onclick="imprimerCloture()" style="margin-left:8px;">🖨️ Imprimer</button>
     </div>
 
     <div class="cloture-layout">
@@ -1514,6 +1521,18 @@
   </div>
 </div>
 
+<!-- Modal mot de passe clôture de caisse -->
+<div class="modal-overlay" id="overlayCloturePassword">
+  <div class="modal">
+    <h2>Clôture de caisse protégée</h2>
+    <div class="field-row"><label>Mot de passe</label><input type="password" id="cloturePasswordInput" onkeydown="if(event.key==='Enter') checkCloturePassword()"></div>
+    <div id="cloturePasswordError" class="meta" style="display:none;color:#B0453B;font-size:0.8rem;margin-top:4px;">Mot de passe incorrect.</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeCloturePasswordModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="checkCloturePassword()">Valider</button>
+    </div>
+  </div>
+</div>
 <!-- Modal Autre (vente de produit) -->
 <div class="modal-overlay" id="overlayAutre">
   <div class="modal">
@@ -1685,6 +1704,7 @@
   <div class="big-alert-box">
     <button class="big-alert-close" onclick="closeBigAlert()">✕</button>
     <div id="bigAlertBox"></div>
+    <button class="btn btn-primary" id="bigAlertOkBtn" style="display:none;margin-top:16px;width:100%;" onclick="confirmBigAlert()">OK</button>
   </div>
 </div>
 
@@ -1695,7 +1715,7 @@ let clients = [];
 let animauxParClient = {};
 let parametres = [];
 let rendezVous = [];
-let securiteSettings = { appAccessEnabled: false, comptaAccessEnabled: true };
+let securiteSettings = { appAccessEnabled: false, comptaAccessEnabled: true, clotureAccessEnabled: false };
 
 // ---------- API helpers ----------
 async function apiGet(action, params){
@@ -1803,15 +1823,28 @@ function toast(msg){
   setTimeout(()=>t.classList.remove('show'), 2200);
 }
 
-function bigAlert(msg){
+let bigAlertOnOk = null;
+
+function bigAlert(msg, onOk){
   const box = document.getElementById('bigAlertBox');
   const overlay = document.getElementById('bigAlertOverlay');
+  const okBtn = document.getElementById('bigAlertOkBtn');
   box.textContent = msg;
+  bigAlertOnOk = typeof onOk === 'function' ? onOk : null;
+  okBtn.style.display = bigAlertOnOk ? 'block' : 'none';
   overlay.classList.add('show');
 }
 
 function closeBigAlert(){
   document.getElementById('bigAlertOverlay').classList.remove('show');
+  bigAlertOnOk = null;
+}
+
+function confirmBigAlert(){
+  const cb = bigAlertOnOk;
+  document.getElementById('bigAlertOverlay').classList.remove('show');
+  bigAlertOnOk = null;
+  if (cb) cb();
 }
 
 // ---------- Chargement initial ----------
@@ -1892,8 +1925,8 @@ function renderOuvertureCaisse(){
   const entry = ouvertureCaisseData.find(o => normalizeDateStr(o.Date) === ouvertureSelectedDate);
 
   if (entry){
-    sommeInput.value = parseFloat(entry.Somme) || 0;
-    status.textContent = `Déjà renseigné pour le ${formatDateFR(ouvertureSelectedDate)} : ${(parseFloat(entry.Somme) || 0).toFixed(2)} € (modifiable)`;
+    sommeInput.value = parseFloat(entry.Fond_Ouverture) || 0;
+    status.textContent = `Déjà renseigné pour le ${formatDateFR(ouvertureSelectedDate)} : ${(parseFloat(entry.Fond_Ouverture) || 0).toFixed(2)} € (modifiable)`;
   } else {
     sommeInput.value = '';
     status.textContent = `Pas encore renseigné pour le ${formatDateFR(ouvertureSelectedDate)}.`;
@@ -1911,19 +1944,33 @@ async function saveOuvertureCaisse(){
   const somme = parseFloat(document.getElementById('ouvertureSommeInput').value);
   if (isNaN(somme) || somme < 0){ toast('Renseigne un montant valide'); return; }
 
+  const dejaFaite = (ouvertureCaisseData || []).find(o =>
+    normalizeDateStr(o.Date) === ouvertureSelectedDate &&
+    o.Fond_Ouverture !== '' && o.Fond_Ouverture !== undefined && o.Fond_Ouverture !== null
+  );
+  if (dejaFaite){
+    bigAlert(`Impossible : l'ouverture de caisse a déjà été réalisée pour le ${formatDateFR(ouvertureSelectedDate)}.`);
+    return;
+  }
+
+  const confirme = confirm(
+    `⚠️ Opération irréversible.\n\nUne fois l'ouverture de caisse enregistrée pour le ${formatDateFR(ouvertureSelectedDate)}, elle ne pourra plus être modifiée aujourd'hui. La prochaine ouverture sera possible demain.\n\nConfirmer l'ouverture avec un fond de caisse de ${somme.toFixed(2)} € ?`
+  );
+  if (!confirme) return;
+
   toast('Enregistrement...');
   const res = await apiPost('setOuvertureCaisse', { Date: ouvertureSelectedDate, Somme: somme });
-  if (res.error){ toast('Erreur : ' + res.error); return; }
+  if (res.error){ bigAlert(res.error); return; }
 
   // Met a jour le cache local sans tout recharger
   if (ouvertureCaisseData){
     const entry = ouvertureCaisseData.find(o => normalizeDateStr(o.Date) === ouvertureSelectedDate);
-    if (entry){ entry.Somme = somme; }
-    else { ouvertureCaisseData.push({ Date: ouvertureSelectedDate, Somme: somme }); }
+    if (entry){ entry.Fond_Ouverture = somme; }
+    else { ouvertureCaisseData.push({ Date: ouvertureSelectedDate, Fond_Ouverture: somme }); }
   }
 
-  toast('Fond de caisse enregistré ✓');
   renderOuvertureCaisse();
+  bigAlert('Ouverture réalisée avec succès', () => showView('caisse'));
 }
 
 // ============================================
@@ -2029,7 +2076,7 @@ function updateClotureTheorique(){
   // Le theorique en especes doit inclure le fond de caisse du jour (deja physiquement
   // dans le tiroir), sinon la comparaison avec le compte physique (qui lui inclut le fond) est faussee.
   const fondEntry = (ouvertureCaisseData || []).find(o => normalizeDateStr(o.Date) === clotureSelectedDate);
-  const fond = fondEntry ? (parseFloat(fondEntry.Somme) || 0) : 0;
+  const fond = fondEntry ? (parseFloat(fondEntry.Fond_Ouverture) || 0) : 0;
 
   document.getElementById('clotureTheoEspeces').textContent = (especes.total + fond).toFixed(2) + ' €';
   document.getElementById('clotureTheoCheque').textContent = cheque.total.toFixed(2) + ' €';
@@ -2045,7 +2092,7 @@ function updateClotureTheorique(){
 
 function updateClotureFondOuverture(){
   const entry = (ouvertureCaisseData || []).find(o => normalizeDateStr(o.Date) === clotureSelectedDate);
-  const fond = entry ? (parseFloat(entry.Somme) || 0) : 0;
+  const fond = entry ? (parseFloat(entry.Fond_Ouverture) || 0) : 0;
   document.getElementById('clotureFondOuverture').textContent = fond.toFixed(2) + ' €';
   updateClotureNouvelOuverture();
 }
@@ -2131,6 +2178,154 @@ function updateClotureNouvelOuverture(){
 
   const nouveau = fond + especesComptees - remiseEspeces;
   document.getElementById('clotureNouvelOuverture').textContent = nouveau.toFixed(2) + ' €';
+}
+
+// ============================================
+// CLOTURE — enregistrement (PDF -> Drive + upsert Compta_2026)
+// ============================================
+function clotureNum(id){
+  const t = document.getElementById(id).textContent || '0';
+  return parseFloat(t.replace('€','').replace(',', '.').trim()) || 0;
+}
+function clotureInputNum(id){
+  const el = document.getElementById(id);
+  return el ? (parseFloat(el.value) || 0) : 0;
+}
+
+function genererClotureData(){
+  const dateStr = clotureSelectedDate || todayStr();
+
+  const denomLines = CLOTURE_DENOMINATIONS.map(d => {
+    const input = document.getElementById(`clotureQte_${d}`);
+    const qte = input ? (parseInt(input.value, 10) || 0) : 0;
+    return { valeur: d, qte, montant: qte * d };
+  });
+
+  const nbrCbTheo = parseInt(document.getElementById('clotureNbrCBTheo').textContent, 10) || 0;
+
+  return {
+    Date: dateStr,
+    Theo_Especes: clotureNum('clotureTheoEspeces'),
+    Compte_Especes: clotureNum('clotureCompteEspeces'),
+    Dif_Especes: clotureNum('clotureDifEspeces'),
+    Theo_Cheque: clotureNum('clotureTheoCheque'),
+    Compte_Cheque: clotureNum('clotureCompteCheque'),
+    Dif_Cheque: clotureNum('clotureDifCheque'),
+    Theo_CB: clotureNum('clotureTheoCB'),
+    Nbr_CB_Theo: nbrCbTheo,
+    Compte_CB_Nombre: clotureInputNum('clotureCbNombreCompte'),
+    Compte_CB_Montant: clotureInputNum('clotureCbMontantCompte'),
+    Dif_CB: clotureNum('clotureDifCB'),
+    Fond_Ouverture: clotureNum('clotureFondOuverture'),
+    Remise_Especes: clotureInputNum('clotureRemiseEspeces'),
+    Remise_Cheque: clotureInputNum('clotureRemiseCheque'),
+    Nouveau_Fond_Ouverture: clotureNum('clotureNouvelOuverture'),
+    denomLines
+  };
+}
+
+function genererPdfCloture(d){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+  doc.setFontSize(14);
+  doc.text('Au BouBou de Lulu — Clôture de caisse', 14, 14);
+  doc.setFontSize(10);
+  doc.text(`Date : ${d.Date}`, 14, 21);
+  doc.text(`Édité le ${new Date().toLocaleString('fr-FR')}`, 220, 21);
+
+  doc.autoTable({
+    startY: 26,
+    head: [['Moyen', 'Théorique', 'Compté', 'Écart']],
+    body: [
+      ['Espèces', d.Theo_Especes.toFixed(2)+' €', d.Compte_Especes.toFixed(2)+' €', d.Dif_Especes.toFixed(2)+' €'],
+      ['Chèque',  d.Theo_Cheque.toFixed(2)+' €',  d.Compte_Cheque.toFixed(2)+' €',  d.Dif_Cheque.toFixed(2)+' €'],
+      ['CB',      d.Theo_CB.toFixed(2)+' €',      d.Compte_CB_Montant.toFixed(2)+' €', d.Dif_CB.toFixed(2)+' €']
+    ],
+    theme: 'grid', styles: { fontSize: 9 }, margin: { left: 14 }, tableWidth: 110
+  });
+
+  doc.autoTable({
+    startY: 26,
+    head: [['Dénomination', 'Qté', 'Montant']],
+    body: d.denomLines.map(l => [l.valeur.toFixed(2)+' €', String(l.qte), l.montant.toFixed(2)+' €']),
+    theme: 'grid', styles: { fontSize: 9 }, margin: { left: 140 }, tableWidth: 70
+  });
+
+  const y1 = doc.lastAutoTable.finalY + 8;
+  doc.setFontSize(9);
+  doc.text(`Fond de caisse (ouverture) : ${d.Fond_Ouverture.toFixed(2)} €`, 14, y1);
+  doc.text(`Nouveau fond de caisse (demain) : ${d.Nouveau_Fond_Ouverture.toFixed(2)} €`, 14, y1+6);
+  doc.text(`Remise espèces : ${d.Remise_Especes.toFixed(2)} €`, 14, y1+12);
+  doc.text(`Remise chèques : ${d.Remise_Cheque.toFixed(2)} €`, 14, y1+18);
+  doc.text(`Encaissement CB — Théorique : ${d.Nbr_CB_Theo} / Compté : ${d.Compte_CB_Nombre}`, 14, y1+24);
+
+  return doc;
+}
+
+// ---------- Clôture de caisse : protection par mot de passe (activable) ----------
+function demanderClotureCaisse(){
+  if (!securiteSettings.clotureAccessEnabled || sessionStorage.getItem('clotureUnlocked') === 'true'){
+    cloturerCaisse();
+    return;
+  }
+  document.getElementById('cloturePasswordInput').value = '';
+  document.getElementById('cloturePasswordError').style.display = 'none';
+  document.getElementById('overlayCloturePassword').classList.add('show');
+  document.getElementById('cloturePasswordInput').focus();
+}
+
+function closeCloturePasswordModal(){
+  document.getElementById('overlayCloturePassword').classList.remove('show');
+}
+
+async function checkCloturePassword(){
+  const password = document.getElementById('cloturePasswordInput').value;
+  if (!password) return;
+
+  const res = await apiPost('checkComptaPassword', { password });
+  if (res.error){ toast('Erreur : ' + res.error); return; }
+
+  if (res.success){
+    sessionStorage.setItem('clotureUnlocked', 'true');
+    closeCloturePasswordModal();
+    cloturerCaisse();
+  } else {
+    document.getElementById('cloturePasswordError').style.display = 'block';
+  }
+}
+
+async function cloturerCaisse(){
+  const d = genererClotureData();
+
+  const dejaFaite = (ouvertureCaisseData || []).find(o =>
+    normalizeDateStr(o.Date) === d.Date && o.PDF_URL
+  );
+  if (dejaFaite){
+    bigAlert(`Impossible : la clôture a déjà été réalisée pour le ${formatDateFR(d.Date)}.`);
+    return;
+  }
+
+  const confirme = confirm(
+    `⚠️ Opération irréversible.\n\nUne fois la clôture enregistrée pour le ${formatDateFR(d.Date)}, elle ne pourra plus être modifiée. Le PDF sera sauvegardé et Compta_2026 mis à jour. La prochaine clôture sera possible demain.\n\nConfirmer la clôture de caisse ?`
+  );
+  if (!confirme) return;
+
+  const doc = genererPdfCloture(d);
+  const pdfBase64 = doc.output('datauristring').split(',')[1];
+
+  toast('Enregistrement de la clôture...');
+  const res = await apiPost('setCloture', { ...d, PdfBase64: pdfBase64 });
+  if (res.error){ bigAlert(res.error); return; }
+
+  // Met a jour le cache local pour bloquer une 2e tentative sans repasser par le serveur
+  if (ouvertureCaisseData){
+    const entry = ouvertureCaisseData.find(o => normalizeDateStr(o.Date) === d.Date);
+    if (entry){ entry.PDF_URL = res.pdf_url || 'ok'; }
+    else { ouvertureCaisseData.push({ Date: d.Date, PDF_URL: res.pdf_url || 'ok' }); }
+  }
+
+  toast('Clôture enregistrée dans Compta_2026 ✓');
 }
 
 let analyseVentes = null;
@@ -2222,7 +2417,7 @@ function renderAnalyseContent(){
 
   if (analyseSubTab === 'generale'){
     const ouvertureEntry = (ouvertureCaisseData || []).find(o => normalizeDateStr(o.Date) === analyseSelectedDate);
-    const fondCaisse = ouvertureEntry ? (parseFloat(ouvertureEntry.Somme) || 0) : 0;
+    const fondCaisse = ouvertureEntry ? (parseFloat(ouvertureEntry.Fond_Ouverture) || 0) : 0;
 
     container.innerHTML = `
       <div class="analyse-recap-card">
@@ -2254,7 +2449,7 @@ function renderAnalyseContent(){
   let ouvertureHtml = '';
   if (analyseSubTab === 'espece'){
     const entry = (ouvertureCaisseData || []).find(o => normalizeDateStr(o.Date) === analyseSelectedDate);
-    const fondCaisse = entry ? (parseFloat(entry.Somme) || 0) : 0;
+    const fondCaisse = entry ? (parseFloat(entry.Fond_Ouverture) || 0) : 0;
     const totalCaisse = fondCaisse + r.total;
 
     ouvertureHtml = `
@@ -3211,6 +3406,23 @@ function closeClientModal(){
   }
 }
 
+function normalizePhone(val){
+  return (val || '').toString().replace(/\D/g, '');
+}
+
+function findClientDuplicates(nom, prenom, tel, excludeId){
+  const nomN = normalizeSearch(nom);
+  const prenomN = normalizeSearch(prenom);
+  const telN = normalizePhone(tel);
+
+  return (clients || []).filter(c => {
+    if (excludeId && c.ID_Client === excludeId) return false;
+    const memeNomPrenom = nomN && normalizeSearch(c.Nom) === nomN && normalizeSearch(c.Prenom) === prenomN;
+    const memeTel = telN && normalizePhone(c.Telephone) === telN;
+    return memeNomPrenom || memeTel;
+  });
+}
+
 async function saveClient(){
   const Nom = document.getElementById('fNom').value.trim();
   if (!Nom){ toast('Le nom est obligatoire'); return; }
@@ -3228,6 +3440,15 @@ async function saveClient(){
     Commune: document.getElementById('fCommune').value.trim(),
     Notes: document.getElementById('fNotes').value.trim()
   };
+
+  const doublons = findClientDuplicates(data.Nom, data.Prenom, data.Telephone, editId || null);
+  if (doublons.length){
+    const liste = doublons.map(c => `- ${c.Nom} ${c.Prenom || ''} ${c.Telephone ? '(' + c.Telephone + ')' : ''}`.trim()).join('\n');
+    const continuer = confirm(
+      `⚠️ Un client similaire existe déjà (même nom/prénom ou même téléphone) :\n\n${liste}\n\nEnregistrer quand même ce client ?`
+    );
+    if (!continuer) return;
+  }
 
   toast('Enregistrement...');
 
@@ -3519,6 +3740,7 @@ function selectParamType(type){
 function loadSecuriteSettingsIntoForm(){
   document.getElementById('chkAppAccess').checked = !!securiteSettings.appAccessEnabled;
   document.getElementById('chkComptaAccess').checked = !!securiteSettings.comptaAccessEnabled;
+  document.getElementById('chkClotureAccess').checked = !!securiteSettings.clotureAccessEnabled;
   document.getElementById('secuCurrentPassword').value = '';
   document.getElementById('secuNewPassword').value = '';
   document.getElementById('secuTogglesMsg').textContent = '';
@@ -3532,7 +3754,8 @@ async function saveSecuriteToggles(){
   const payload = {
     currentPassword,
     appAccessEnabled: document.getElementById('chkAppAccess').checked,
-    comptaAccessEnabled: document.getElementById('chkComptaAccess').checked
+    comptaAccessEnabled: document.getElementById('chkComptaAccess').checked,
+    clotureAccessEnabled: document.getElementById('chkClotureAccess').checked
   };
 
   const res = await apiPost('setSecuriteSettings', payload);
@@ -3550,6 +3773,7 @@ async function saveSecuriteToggles(){
 
   securiteSettings.appAccessEnabled = payload.appAccessEnabled;
   securiteSettings.comptaAccessEnabled = payload.comptaAccessEnabled;
+  securiteSettings.clotureAccessEnabled = payload.clotureAccessEnabled;
   msg.style.color = '#2E7D32';
   msg.textContent = 'Réglages enregistrés ✓';
   document.getElementById('secuCurrentPassword').value = '';
