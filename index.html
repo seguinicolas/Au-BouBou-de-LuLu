@@ -370,6 +370,9 @@
   .nav-item.active{ background:var(--blush); color:var(--sage-dark); }
 
   .param-tabs{ display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
+
+  .compta-filters{ display:flex; gap:8px; margin-bottom:14px; }
+  .compta-filters select{ width:auto; min-width:140px; }
   .tab-btn{
     padding:8px 16px;
     border-radius:999px;
@@ -1229,6 +1232,12 @@
         <div id="secuPasswordMsg" class="meta" style="font-size:0.8rem;margin-top:8px;"></div>
       </div>
     </div>
+
+    <div class="card" id="fournisseurCard" style="display:none;padding:14px 16px;margin-bottom:14px;">
+      <div class="section-title"><span>Fournisseurs</span></div>
+      <button class="btn btn-primary" style="width:100%;margin-bottom:12px;" onclick="openFournisseurForm()">+ Fournisseur</button>
+      <div id="fournisseurList"></div>
+    </div>
   </div>
 
   <div id="viewAgenda" style="display:none">
@@ -1400,13 +1409,14 @@
     </div>
 
     <div id="comptaContent" style="display:none">
-      <div class="empty">
-        <svg class="paw" viewBox="0 0 64 64" fill="currentColor" style="display:block;margin:0 auto 8px">
-          <ellipse cx="32" cy="42" rx="15" ry="12"/><ellipse cx="14" cy="24" rx="7" ry="9"/>
-          <ellipse cx="50" cy="24" rx="7" ry="9"/><ellipse cx="24" cy="12" rx="6" ry="8"/><ellipse cx="40" cy="12" rx="6" ry="8"/>
-        </svg>
-        Compta — à construire.
+      <div class="compta-filters">
+        <select id="comptaMoisSelect" onchange="onComptaFilterChange()"></select>
+        <select id="comptaAnneeSelect" onchange="onComptaFilterChange()"></select>
       </div>
+
+      <div class="compta-tabs param-tabs" id="comptaTabs"></div>
+
+      <div id="comptaTabContent"></div>
     </div>
   </div>
 
@@ -1637,6 +1647,33 @@
   </div>
 </div>
 
+<!-- Modal fournisseur -->
+<div class="modal-overlay" id="overlayFournisseur">
+  <div class="modal">
+    <h2 id="fournisseurModalTitle">Nouveau fournisseur</h2>
+    <input type="hidden" id="fourEditId">
+    <div class="field-row"><label>Nom entreprise *</label><input id="fourNomEntreprise" type="text"></div>
+    <div class="grid2">
+      <div class="field-row"><label>Nom du contact</label><input id="fourNomContact" type="text"></div>
+      <div class="field-row"><label>N° client fournisseur</label><input id="fourNClient" type="text"></div>
+    </div>
+    <div class="grid2">
+      <div class="field-row"><label>Téléphone</label><input id="fourTel" type="tel"></div>
+      <div class="field-row"><label>Email</label><input id="fourEmail" type="email"></div>
+    </div>
+    <div class="grid-adresse">
+      <div class="field-row"><label>Adresse</label><input id="fourAdresse" type="text"></div>
+      <div class="field-row"><label>Code postal</label><input id="fourCodePostal" type="text" inputmode="numeric" maxlength="5"></div>
+      <div class="field-row"><label>Commune</label><input id="fourCommune" type="text"></div>
+    </div>
+    <div class="field-row"><label>Notes</label><textarea id="fourNotes" rows="2"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeFournisseurForm()">Annuler</button>
+      <button class="btn btn-primary" onclick="saveFournisseur()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal nouvel animal -->
 <div class="modal-overlay" id="overlayAnimal">
   <div class="modal">
@@ -1708,6 +1745,16 @@
   </div>
 </div>
 
+<div class="big-alert-overlay" id="bigConfirmOverlay">
+  <div class="big-alert-box">
+    <div id="bigConfirmBox"></div>
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button class="btn btn-ghost" style="flex:1;" onclick="closeBigConfirm()">Annuler</button>
+      <button class="btn btn-primary" style="flex:1;" onclick="confirmBigConfirmYes()">Confirmer</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbwAub-4OtWsI6pPboX4RafkHg365sdRMKw_732ZnQThlXPr74iRfEt-vwTeSo160BQl/exec';
 
@@ -1753,6 +1800,7 @@ function showComptaLoginScreen(){
 function showComptaContent(){
   document.getElementById('comptaLoginScreen').style.display = 'none';
   document.getElementById('comptaContent').style.display = 'block';
+  initComptaPage();
 }
 
 function handleComptaViewShow(){
@@ -1765,6 +1813,582 @@ function handleComptaViewShow(){
   } else {
     showComptaLoginScreen();
   }
+}
+
+// ---------- Compta : filtre mois/année + onglets (Chiffre d'affaires, Compte, Dépense, Recette, Dépôt banque...) ----------
+const COMPTA_TABS = ["Chiffre d'affaires", 'Compte', 'Dépense', 'Recette', 'Dépôt banque'];
+const COMPTA_MOIS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+let currentComptaTab = COMPTA_TABS[0];
+let currentComptaMois = new Date().getMonth(); // 0-11, ou 'annee' pour "Toute l'année"
+let currentComptaAnnee = new Date().getFullYear();
+let comptaPageInitialized = false;
+let comptaAnneesDisponibles = [];
+let comptaDataVentes = [];
+let comptaDataOuvertureCloture = [];
+let comptaDataDepenses = [];
+
+async function initComptaPage(){
+  if (comptaPageInitialized) return; // filtre/onglets déjà en place, on ne réinitialise pas la sélection en cours
+  comptaPageInitialized = true;
+  await renderComptaFilters();
+  renderComptaTabs();
+  await chargerDonneesComptaAnnee();
+  renderComptaTabContent();
+}
+
+async function renderComptaFilters(){
+  const moisSelect = document.getElementById('comptaMoisSelect');
+  moisSelect.innerHTML = `<option value="annee">Toute l'année</option>` +
+    COMPTA_MOIS.map((m, i) => `<option value="${i}">${m}</option>`).join('');
+  moisSelect.value = currentComptaMois;
+
+  const anneeSelect = document.getElementById('comptaAnneeSelect');
+  const res = await apiGet('getAnneesDisponibles');
+  comptaAnneesDisponibles = Array.isArray(res) && res.length ? res : [new Date().getFullYear()];
+  if (comptaAnneesDisponibles.indexOf(currentComptaAnnee) === -1){
+    currentComptaAnnee = comptaAnneesDisponibles[comptaAnneesDisponibles.length - 1];
+  }
+  anneeSelect.innerHTML = comptaAnneesDisponibles.map(a => `<option value="${a}">${a}</option>`).join('');
+  anneeSelect.value = currentComptaAnnee;
+}
+
+async function onComptaFilterChange(){
+  const moisVal = document.getElementById('comptaMoisSelect').value;
+  currentComptaMois = moisVal === 'annee' ? 'annee' : parseInt(moisVal, 10);
+  currentComptaAnnee = parseInt(document.getElementById('comptaAnneeSelect').value, 10);
+  await chargerDonneesComptaAnnee();
+  renderComptaTabContent();
+}
+
+// Charge Ventes, Ouverture-Cloture et Dépenses de l'année sélectionnée
+// (fichiers créés automatiquement côté backend si l'année n'existait pas
+// encore). Le filtre mois se fera ensuite côté frontend sur ces données,
+// onglet par onglet.
+async function chargerDonneesComptaAnnee(){
+  document.getElementById('comptaTabContent').innerHTML = '<div class="empty">Chargement…</div>';
+  const [ventes, ouvertureCloture, depenses] = await Promise.all([
+    apiGet('getVentesAnnee', { annee: currentComptaAnnee }),
+    apiGet('getOuvertureClotureAnnee', { annee: currentComptaAnnee }),
+    apiGet('getDepensesAnnee', { annee: currentComptaAnnee })
+  ]);
+  comptaDataVentes = Array.isArray(ventes) ? ventes : [];
+  comptaDataOuvertureCloture = Array.isArray(ouvertureCloture) ? ouvertureCloture : [];
+  comptaDataDepenses = Array.isArray(depenses) ? depenses : [];
+}
+
+function renderComptaTabs(){
+  const wrap = document.getElementById('comptaTabs');
+  wrap.innerHTML = COMPTA_TABS.map(t =>
+    `<button class="tab-btn ${t === currentComptaTab ? 'active' : ''}" onclick="selectComptaTab('${t.replace(/'/g, "\\'")}')">${t}</button>`
+  ).join('');
+}
+
+function selectComptaTab(tab){
+  currentComptaTab = tab;
+  renderComptaTabs();
+  renderComptaTabContent();
+}
+
+function renderComptaTabContent(){
+  const wrap = document.getElementById('comptaTabContent');
+
+  if (currentComptaTab === "Chiffre d'affaires"){
+    renderComptaCA(wrap);
+    return;
+  }
+
+  if (currentComptaTab === 'Dépôt banque'){
+    renderComptaDepotBanque(wrap);
+    return;
+  }
+
+  if (currentComptaTab === 'Dépense'){
+    renderComptaDepense(wrap);
+    return;
+  }
+
+  if (currentComptaTab === 'Compte'){
+    renderComptaCompte(wrap);
+    return;
+  }
+
+  // Autres onglets : pas encore construits.
+  wrap.innerHTML = `
+    <div class="empty">
+      <svg class="paw" viewBox="0 0 64 64" fill="currentColor" style="display:block;margin:0 auto 8px">
+        <ellipse cx="32" cy="42" rx="15" ry="12"/><ellipse cx="14" cy="24" rx="7" ry="9"/>
+        <ellipse cx="50" cy="24" rx="7" ry="9"/><ellipse cx="24" cy="12" rx="6" ry="8"/><ellipse cx="40" cy="12" rx="6" ry="8"/>
+      </svg>
+      ${currentComptaTab} — à construire.
+    </div>`;
+}
+
+// Onglet "Chiffre d'affaires" : un listing par jour, avec le nombre de ventes,
+// la recette calculée depuis les ventes enregistrées, la recette comptée en
+// caisse à la clôture (fond d'ouverture déduit), et l'écart entre les deux —
+// un écart non nul signale une erreur de caisse ce jour-là.
+function renderComptaCA(wrap){
+  const parJourVentes = {}; // { 'yyyy-mm-dd': { count, total } }
+  comptaDataVentes.forEach(v => {
+    if (v.Statut === 'Annulée') return;
+    const key = normalizeDateStr(v.Date);
+    if (!key) return;
+    if (currentComptaMois !== 'annee' && Number(key.slice(5, 7)) - 1 !== currentComptaMois) return;
+    if (!parJourVentes[key]) parJourVentes[key] = { count: 0, total: 0 };
+    parJourVentes[key].count += 1;
+    parJourVentes[key].total += Number(v.Total) || 0;
+  });
+
+  const parJourCaisse = {}; // { 'yyyy-mm-dd': recetteCaisse }
+  comptaDataOuvertureCloture.forEach(o => {
+    const key = normalizeDateStr(o.Date);
+    if (!key) return;
+    if (currentComptaMois !== 'annee' && Number(key.slice(5, 7)) - 1 !== currentComptaMois) return;
+    // Une clôture non encore faite pour ce jour n'a que Fond_Ouverture de rempli : on l'ignore
+    if (!o.PDF_URL) return;
+    const compte = (Number(o.Compte_Especes) || 0) + (Number(o.Compte_CB_Montant) || 0) + (Number(o.Compte_Cheque) || 0);
+    parJourCaisse[key] = compte - (Number(o.Fond_Ouverture) || 0);
+  });
+
+  const jours = Array.from(new Set([...Object.keys(parJourVentes), ...Object.keys(parJourCaisse)])).sort();
+
+  if (jours.length === 0){
+    wrap.innerHTML = `<div class="empty">Aucune vente ni clôture enregistrée sur cette période.</div>`;
+    return;
+  }
+
+  let totalCount = 0, totalVentes = 0, totalCaisse = 0, totalCaisseJours = 0;
+  const lignes = jours.map(key => {
+    const v = parJourVentes[key] || { count: 0, total: 0 };
+    const caisse = parJourCaisse[key];
+    const ecart = caisse !== undefined ? caisse - v.total : null;
+
+    totalCount += v.count;
+    totalVentes += v.total;
+    if (caisse !== undefined){ totalCaisse += caisse; totalCaisseJours += 1; }
+
+    const ecartStyle = (ecart !== null && Math.abs(ecart) >= 0.01) ? 'color:#C0392B;font-weight:700;' : '';
+    return `<tr>
+      <td>${formatDateFR(key)}</td>
+      <td>${v.count} vente${v.count > 1 ? 's' : ''}</td>
+      <td class="amt">${v.total.toFixed(2)} €</td>
+      <td class="amt">${caisse !== undefined ? caisse.toFixed(2) + ' €' : '—'}</td>
+      <td class="amt" style="${ecartStyle}">${ecart !== null ? (ecart >= 0 ? '+' : '') + ecart.toFixed(2) + ' €' : '—'}</td>
+    </tr>`;
+  }).join('');
+
+  const totalEcart = totalCaisseJours > 0 ? totalCaisse - totalVentes : null;
+  const totalLigne = `<tr style="font-weight:700;">
+    <td>Total</td>
+    <td>${totalCount} vente${totalCount > 1 ? 's' : ''}</td>
+    <td class="amt">${totalVentes.toFixed(2)} €</td>
+    <td class="amt">${totalCaisseJours > 0 ? totalCaisse.toFixed(2) + ' €' : '—'}</td>
+    <td class="amt">${totalEcart !== null ? (totalEcart >= 0 ? '+' : '') + totalEcart.toFixed(2) + ' €' : '—'}</td>
+  </tr>`;
+
+  wrap.innerHTML = `
+    <table class="analyse-table">
+      <thead>
+        <tr><th>Date</th><th>Nombre de ventes</th><th>Recette ventes</th><th>Recette caisse</th><th>Écart</th></tr>
+      </thead>
+      <tbody>${lignes}${totalLigne}</tbody>
+    </table>`;
+}
+
+// Onglet "Dépôt banque" : 4 sous-filtres (Tous / Espèces / Chèques / CB).
+// Espèces et Chèques viennent des montants remis en banque à la clôture
+// (Remise_Especes, Remise_Cheque) ; la CB n'a pas de "remise" physique,
+// elle arrive automatiquement via le terminal, donc on affiche le montant
+// encaissé (Compte_CB_Montant). "Tous" montre les 3 côte à côte + le total.
+const COMPTA_DEPOT_FILTRES = ['Tous', 'Espèces', 'Chèques', 'CB'];
+let currentComptaDepotFiltre = 'Tous';
+
+function selectComptaDepotFiltre(filtre){
+  currentComptaDepotFiltre = filtre;
+  renderComptaTabContent();
+}
+
+function renderComptaDepotBanque(wrap){
+  const sousFiltres = COMPTA_DEPOT_FILTRES.map(f =>
+    `<button class="tab-btn ${f === currentComptaDepotFiltre ? 'active' : ''}" onclick="selectComptaDepotFiltre('${f}')">${f}</button>`
+  ).join('');
+
+  const jours = comptaDataOuvertureCloture
+    .filter(o => {
+      if (!o.PDF_URL) return false; // pas de clôture faite ce jour-là : rien à déposer/encaisser
+      const key = normalizeDateStr(o.Date);
+      if (!key) return false;
+      if (currentComptaMois !== 'annee' && Number(key.slice(5, 7)) - 1 !== currentComptaMois) return false;
+      return true;
+    })
+    .map(o => ({
+      key: normalizeDateStr(o.Date),
+      especes: Number(o.Remise_Especes) || 0,
+      cheques: Number(o.Remise_Cheque) || 0,
+      cb: Number(o.Compte_CB_Montant) || 0
+    }))
+    .sort((a, b) => a.key.localeCompare(b.key));
+
+  let tableHtml;
+
+  if (jours.length === 0){
+    tableHtml = `<div class="empty" style="margin-top:14px;">Aucune clôture enregistrée pour cette période.</div>`;
+  } else if (currentComptaDepotFiltre === 'Tous'){
+    let totEspeces = 0, totCheques = 0, totCB = 0;
+    const lignes = jours.map(j => {
+      totEspeces += j.especes; totCheques += j.cheques; totCB += j.cb;
+      const total = j.especes + j.cheques + j.cb;
+      return `<tr>
+        <td>${formatDateFR(j.key)}</td>
+        <td class="amt">${j.especes.toFixed(2)} €</td>
+        <td class="amt">${j.cheques.toFixed(2)} €</td>
+        <td class="amt">${j.cb.toFixed(2)} €</td>
+        <td class="amt">${total.toFixed(2)} €</td>
+      </tr>`;
+    }).join('');
+    const totalGeneral = totEspeces + totCheques + totCB;
+    tableHtml = `
+      <table class="analyse-table" style="margin-top:14px;">
+        <thead><tr><th>Date</th><th>Espèces</th><th>Chèques</th><th>CB</th><th>Total</th></tr></thead>
+        <tbody>
+          ${lignes}
+          <tr style="font-weight:700;">
+            <td>Total</td>
+            <td class="amt">${totEspeces.toFixed(2)} €</td>
+            <td class="amt">${totCheques.toFixed(2)} €</td>
+            <td class="amt">${totCB.toFixed(2)} €</td>
+            <td class="amt">${totalGeneral.toFixed(2)} €</td>
+          </tr>
+        </tbody>
+      </table>`;
+  } else {
+    const champ = currentComptaDepotFiltre === 'Espèces' ? 'especes' : currentComptaDepotFiltre === 'Chèques' ? 'cheques' : 'cb';
+    const joursFiltres = jours.filter(j => j[champ] > 0);
+
+    if (joursFiltres.length === 0){
+      tableHtml = `<div class="empty" style="margin-top:14px;">Aucun montant en ${currentComptaDepotFiltre.toLowerCase()} pour cette période.</div>`;
+    } else {
+      let total = 0;
+      const lignes = joursFiltres.map(j => {
+        total += j[champ];
+        return `<tr><td>${formatDateFR(j.key)}</td><td class="amt">${j[champ].toFixed(2)} €</td></tr>`;
+      }).join('');
+      tableHtml = `
+        <table class="analyse-table" style="margin-top:14px;">
+          <thead><tr><th>Date</th><th>${currentComptaDepotFiltre}</th></tr></thead>
+          <tbody>
+            ${lignes}
+            <tr style="font-weight:700;"><td>Total</td><td class="amt">${total.toFixed(2)} €</td></tr>
+          </tbody>
+        </table>`;
+    }
+  }
+
+  wrap.innerHTML = `<div class="compta-tabs param-tabs">${sousFiltres}</div>${tableHtml}`;
+}
+
+// Onglet "Dépense" : formulaire inline en haut (Date / Fournisseur / Montant,
+// dans le même esprit que l'ajout de lignes de chèque à la clôture — pas de
+// popup, ça s'ajoute directement à la liste en dessous), puis un listing
+// filtré par le mois/année en cours, avec suppression ligne par ligne.
+function renderComptaDepense(wrap){
+  // Les fournisseurs sont normalement déjà en cache (onglet Paramètres) ;
+  // sinon on les charge ici pour remplir la liste déroulante.
+  if (!fournisseursCharges){
+    apiGet('getFournisseurs').then(res => {
+      if (!(res && res.error)){
+        fournisseurs = res || [];
+        fournisseursCharges = true;
+        if (currentComptaTab === 'Dépense') renderComptaDepense(document.getElementById('comptaTabContent'));
+      }
+    });
+  }
+
+  const optionsFournisseurs = fournisseurs
+    .map(f => `<option value="${f.Nom_Entreprise}">${f.Nom_Entreprise}</option>`)
+    .join('');
+
+  const lignesData = comptaDataDepenses
+    .filter(d => {
+      const key = normalizeDateStr(d.Date);
+      if (!key) return false;
+      if (currentComptaMois !== 'annee' && Number(key.slice(5, 7)) - 1 !== currentComptaMois) return false;
+      return true;
+    })
+    .map(d => ({
+      id: d.ID_Depense,
+      key: normalizeDateStr(d.Date),
+      fournisseur: d.Fournisseur || '',
+      designation: d.Designation || '',
+      categorie: d.Categorie || '',
+      montant: Number(d.Montant) || 0
+    }))
+    .sort((a, b) => a.key.localeCompare(b.key));
+
+  let total = 0;
+  const lignes = lignesData.map(d => {
+    total += d.montant;
+    return `<tr>
+      <td>${formatDateFR(d.key)}</td>
+      <td>${d.fournisseur || '—'}</td>
+      <td>${d.designation || '—'}</td>
+      <td>${d.categorie || '—'}</td>
+      <td class="amt">${d.montant.toFixed(2)} €</td>
+      <td><button class="btn-delete" onclick="removeDepense('${d.id}')">✕</button></td>
+    </tr>`;
+  }).join('');
+
+  const tableHtml = lignesData.length ? `
+    <table class="analyse-table" style="margin-top:14px;">
+      <thead><tr><th>Date</th><th>Fournisseur</th><th>Désignation</th><th>Catégorie</th><th>Montant</th><th></th></tr></thead>
+      <tbody>
+        ${lignes}
+        <tr style="font-weight:700;"><td colspan="4">Total</td><td class="amt">${total.toFixed(2)} €</td><td></td></tr>
+      </tbody>
+    </table>` : `<div class="empty" style="margin-top:14px;">Aucune dépense pour cette période.</div>`;
+
+  wrap.innerHTML = `
+    <div class="card" style="padding:14px 16px;margin-bottom:4px;">
+      <div class="section-title"><span>Ajouter une dépense</span></div>
+      <div class="grid3">
+        <div class="field-row"><label>Date</label><input type="date" id="depDate" value="${todayStr()}"></div>
+        <div class="field-row"><label>Fournisseur</label><select id="depFournisseur"><option value="">—</option>${optionsFournisseurs}</select></div>
+        <div class="field-row"><label>Montant (€)</label><input type="number" id="depMontant" step="0.01" min="0" placeholder="0.00"></div>
+      </div>
+      <div class="grid3" style="margin-top:8px;">
+        <div class="field-row" style="grid-column:span 2;"><label>Désignation</label><input type="text" id="depDesignation" placeholder="Ex : Croquettes, shampoing..."></div>
+        <div class="field-row"><label>Catégorie</label>
+          <select id="depCategorie">
+            <option value="">—</option>
+            <option value="Fonctionnement">Fonctionnement</option>
+            <option value="Salaire">Salaire</option>
+            <option value="Fourniture">Fourniture</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="addDepenseUI()">+ Ajouter</button>
+    </div>
+    ${tableHtml}`;
+}
+
+async function addDepenseUI(){
+  const date = document.getElementById('depDate').value;
+  const fournisseur = document.getElementById('depFournisseur').value;
+  const montant = document.getElementById('depMontant').value;
+  const designation = document.getElementById('depDesignation').value.trim();
+  const categorie = document.getElementById('depCategorie').value;
+
+  if (!date){ toast('Choisis une date'); return; }
+  if (!montant || Number(montant) <= 0){ toast('Renseigne un montant'); return; }
+
+  toast('Ajout...');
+  const res = await apiPost('addDepense', { Date: date, Fournisseur: fournisseur, Montant: montant, Designation: designation, Categorie: categorie });
+  if (res.error){ toast('Erreur : ' + res.error); return; }
+
+  toast('Dépense ajoutée ✓');
+  await chargerDonneesComptaAnnee();
+  renderComptaTabContent();
+}
+
+async function removeDepense(id){
+  if (!confirm('Supprimer cette dépense ?')) return;
+
+  toast('Suppression...');
+  const res = await apiPost('deleteDepense', { ID_Depense: id, Annee: currentComptaAnnee });
+  if (res.error){ toast('Erreur : ' + res.error); return; }
+
+  toast('Supprimée ✓');
+  await chargerDonneesComptaAnnee();
+  renderComptaTabContent();
+}
+
+// Onglet "Compte" : généré automatiquement, aucune saisie ici. Fusionne
+// chronologiquement les Dépenses (sorties) et les Dépôts banque (entrées —
+// espèces + chèques + CB remis/encaissés à la clôture), avec un solde qui se
+// cumule ligne après ligne. Le solde repart à 0 en début de période filtrée
+// (pas de report d'un solde antérieur pour l'instant).
+function renderComptaCompte(wrap){
+  const lignes = [];
+
+  comptaDataDepenses.forEach(d => {
+    const key = normalizeDateStr(d.Date);
+    if (!key) return;
+    if (currentComptaMois !== 'annee' && Number(key.slice(5, 7)) - 1 !== currentComptaMois) return;
+    lignes.push({
+      key: key,
+      designation: d.Designation || d.Fournisseur || 'Dépense',
+      fournisseur: d.Fournisseur || '—',
+      categorie: d.Categorie || d['Catégorie'] || '—',
+      type: 'Dépense',
+      montant: -(Number(d.Montant) || 0)
+    });
+  });
+
+  comptaDataOuvertureCloture.forEach(o => {
+    if (!o.PDF_URL) return; // pas de clôture faite ce jour-là : rien à déposer
+    const key = normalizeDateStr(o.Date);
+    if (!key) return;
+    if (currentComptaMois !== 'annee' && Number(key.slice(5, 7)) - 1 !== currentComptaMois) return;
+    const total = (Number(o.Remise_Especes) || 0) + (Number(o.Remise_Cheque) || 0) + (Number(o.Compte_CB_Montant) || 0);
+    if (total <= 0) return;
+    lignes.push({
+      key: key,
+      designation: 'Dépôt banque',
+      fournisseur: '—',
+      categorie: '—',
+      type: 'Recette',
+      montant: total
+    });
+  });
+
+  if (lignes.length === 0){
+    wrap.innerHTML = `<div class="empty">Aucun mouvement pour cette période.</div>`;
+    return;
+  }
+
+  lignes.sort((a, b) => a.key.localeCompare(b.key));
+
+  let solde = 0;
+  const rows = lignes.map(l => {
+    solde += l.montant;
+    const signe = l.montant >= 0 ? '+' : '';
+    return `<tr>
+      <td>${formatDateFR(l.key)}</td>
+      <td>${l.designation}</td>
+      <td>${l.fournisseur}</td>
+      <td>${l.categorie}</td>
+      <td class="amt">${signe}${l.montant.toFixed(2)} €</td>
+      <td>${l.type}</td>
+      <td class="amt">${solde.toFixed(2)} €</td>
+    </tr>`;
+  }).join('');
+
+  wrap.innerHTML = `
+    <table class="analyse-table">
+      <thead><tr><th>Date</th><th>Désignation</th><th>Fournisseur</th><th>Catégorie</th><th>Somme</th><th>Type</th><th>Solde</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+// Race/Prestation/Sécurité), dans le même esprit que la fiche Client — fiche
+// CRUD complète (création/modif/suppression). Le nom d'entreprise alimentera
+// plus tard une liste déroulante dans le tableau des dépenses (Compta > Dépense).
+let fournisseurs = [];
+let fournisseursCharges = false;
+
+async function loadFournisseursSection(){
+  const list = document.getElementById('fournisseurList');
+  if (!list) return;
+
+  list.className = 'meta';
+  list.style.cssText = 'color:var(--ink-soft);font-size:0.85rem;padding:8px 0;';
+  list.innerHTML = 'Chargement...';
+
+  if (!fournisseursCharges){
+    const res = await apiGet('getFournisseurs');
+    if (res && res.error){
+      list.innerHTML = `<div style="color:#B0453B;">Erreur : ${res.error}</div>`;
+      return;
+    }
+    fournisseurs = res || [];
+    fournisseursCharges = true;
+  }
+  renderFournisseurList();
+}
+
+function renderFournisseurList(){
+  const list = document.getElementById('fournisseurList');
+  if (!list) return;
+
+  if (!fournisseurs.length){
+    list.className = 'meta';
+    list.style.cssText = 'color:var(--ink-soft);font-size:0.85rem;padding:8px 0;';
+    list.innerHTML = 'Aucun fournisseur pour l\'instant.';
+    return;
+  }
+
+  list.className = '';
+  list.style.cssText = '';
+  list.innerHTML = fournisseurs.map(f => `
+    <div class="param-item">
+      <div>
+        <div class="val">${f.Nom_Entreprise || ''}</div>
+        <div class="sub">${[f.Nom_Contact, f.Telephone, f.Email].filter(Boolean).join(' · ') || 'Pas de contact renseigné'}</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <button class="btn-delete" style="color:var(--sage-dark);" onclick="openFournisseurForm('${f.ID_Fournisseur}')">✎</button>
+        <button class="btn-delete" onclick="removeFournisseur('${f.ID_Fournisseur}')">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openFournisseurForm(id){
+  const editing = !!id;
+  const f = editing ? fournisseurs.find(x => x.ID_Fournisseur === id) : null;
+
+  document.getElementById('fournisseurModalTitle').textContent = editing ? 'Modifier le fournisseur' : 'Nouveau fournisseur';
+  document.getElementById('fourEditId').value = id || '';
+  document.getElementById('fourNomEntreprise').value = f ? (f.Nom_Entreprise || '') : '';
+  document.getElementById('fourNomContact').value = f ? (f.Nom_Contact || '') : '';
+  document.getElementById('fourNClient').value = f ? (f.N_Client_Fournisseur || '') : '';
+  document.getElementById('fourTel').value = f ? (f.Telephone || '') : '';
+  document.getElementById('fourEmail').value = f ? (f.Email || '') : '';
+  document.getElementById('fourAdresse').value = f ? (f.Adresse || '') : '';
+  document.getElementById('fourCodePostal').value = f ? (f.Code_Postal || '') : '';
+  document.getElementById('fourCommune').value = f ? (f.Commune || '') : '';
+  document.getElementById('fourNotes').value = f ? (f.Notes || '') : '';
+
+  document.getElementById('overlayFournisseur').classList.add('show');
+}
+
+function closeFournisseurForm(){
+  document.getElementById('overlayFournisseur').classList.remove('show');
+}
+
+async function saveFournisseur(){
+  const nom = document.getElementById('fourNomEntreprise').value.trim();
+  if (!nom){ toast('Le nom de l\'entreprise est obligatoire'); return; }
+
+  const editId = document.getElementById('fourEditId').value;
+  const data = {
+    Nom_Entreprise: nom,
+    Nom_Contact: document.getElementById('fourNomContact').value.trim(),
+    N_Client_Fournisseur: document.getElementById('fourNClient').value.trim(),
+    Telephone: document.getElementById('fourTel').value.trim(),
+    Email: document.getElementById('fourEmail').value.trim(),
+    Adresse: document.getElementById('fourAdresse').value.trim(),
+    Code_Postal: document.getElementById('fourCodePostal').value.trim(),
+    Commune: document.getElementById('fourCommune').value.trim(),
+    Notes: document.getElementById('fourNotes').value.trim()
+  };
+
+  toast(editId ? 'Modification...' : 'Ajout...');
+  let res;
+  if (editId){
+    data.ID_Fournisseur = editId;
+    res = await apiPost('updateFournisseur', data);
+  } else {
+    res = await apiPost('addFournisseur', data);
+  }
+  if (res.error){ toast('Erreur : ' + res.error); return; }
+
+  toast(editId ? 'Fournisseur modifié ✓' : 'Fournisseur ajouté ✓');
+  closeFournisseurForm();
+  fournisseursCharges = false;
+  await loadFournisseursSection();
+}
+
+async function removeFournisseur(id){
+  if (!confirm('Supprimer ce fournisseur ?')) return;
+
+  toast('Suppression...');
+  const res = await apiPost('deleteFournisseur', { ID_Fournisseur: id });
+  if (res.error){ toast('Erreur : ' + res.error); return; }
+
+  toast('Supprimé ✓');
+  fournisseursCharges = false;
+  await loadFournisseursSection();
 }
 
 async function checkComptaPassword(){
@@ -1783,7 +2407,18 @@ async function checkComptaPassword(){
 }
 
 // ---------- Accès général à l'app (même mot de passe, protection activable/désactivable) ----------
+// Appels de démarrage : lancés tous en parallèle dès le tout début (au lieu
+// d'attendre la fin de l'un avant de lancer le suivant, ce qui additionnait
+// les temps d'attente réseau — 3-4 appels enchaînés pouvaient prendre 20-30s
+// au total). loadAll() et loadNotes() consomment ces promesses déjà en vol
+// si elles sont disponibles, sinon refont un appel normal.
+let preloadInitData = null;
+let preloadNotes = null;
+
 async function initAppGate(){
+  preloadInitData = apiGet('getInitData');
+  preloadNotes = apiGet('getNotes');
+
   const settings = await apiGet('getSecuriteSettings');
   if (settings && !settings.error){
     securiteSettings = settings;
@@ -1847,9 +2482,30 @@ function confirmBigAlert(){
   if (cb) cb();
 }
 
+let bigConfirmOnYes = null;
+
+function bigConfirm(msg, onYes){
+  document.getElementById('bigConfirmBox').textContent = msg;
+  bigConfirmOnYes = typeof onYes === 'function' ? onYes : null;
+  document.getElementById('bigConfirmOverlay').classList.add('show');
+}
+
+function closeBigConfirm(){
+  document.getElementById('bigConfirmOverlay').classList.remove('show');
+  bigConfirmOnYes = null;
+}
+
+function confirmBigConfirmYes(){
+  const cb = bigConfirmOnYes;
+  document.getElementById('bigConfirmOverlay').classList.remove('show');
+  bigConfirmOnYes = null;
+  if (cb) cb();
+}
+
 // ---------- Chargement initial ----------
 async function loadAll(){
-  const initData = await apiGet('getInitData');
+  const initData = await (preloadInitData || apiGet('getInitData'));
+  preloadInitData = null; // consommée : les prochains rechargements refont un appel normal
 
   if (initData.error){
     bigAlert('Erreur de chargement : ' + initData.error + '\nRecharge la page pour réessayer.');
@@ -1953,11 +2609,13 @@ async function saveOuvertureCaisse(){
     return;
   }
 
-  const confirme = confirm(
-    `⚠️ Opération irréversible.\n\nUne fois l'ouverture de caisse enregistrée pour le ${formatDateFR(ouvertureSelectedDate)}, elle ne pourra plus être modifiée aujourd'hui. La prochaine ouverture sera possible demain.\n\nConfirmer l'ouverture avec un fond de caisse de ${somme.toFixed(2)} € ?`
+  bigConfirm(
+    `⚠️ Opération irréversible.\n\nUne fois l'ouverture de caisse enregistrée pour le ${formatDateFR(ouvertureSelectedDate)}, elle ne pourra plus être modifiée aujourd'hui. La prochaine ouverture sera possible demain.\n\nConfirmer l'ouverture avec un fond de caisse de ${somme.toFixed(2)} € ?`,
+    () => finaliserOuvertureCaisse(somme)
   );
-  if (!confirme) return;
+}
 
+async function finaliserOuvertureCaisse(somme){
   toast('Enregistrement...');
   const res = await apiPost('setOuvertureCaisse', { Date: ouvertureSelectedDate, Somme: somme });
   if (res.error){ bigAlert(res.error); return; }
@@ -2306,11 +2964,13 @@ async function cloturerCaisse(){
     return;
   }
 
-  const confirme = confirm(
-    `⚠️ Opération irréversible.\n\nUne fois la clôture enregistrée pour le ${formatDateFR(d.Date)}, elle ne pourra plus être modifiée. Le PDF sera sauvegardé et Compta_2026 mis à jour. La prochaine clôture sera possible demain.\n\nConfirmer la clôture de caisse ?`
+  bigConfirm(
+    `⚠️ Opération irréversible.\n\nUne fois la clôture enregistrée pour le ${formatDateFR(d.Date)}, elle ne pourra plus être modifiée. Le PDF sera sauvegardé et Compta_2026 mis à jour. La prochaine clôture sera possible demain.\n\nConfirmer la clôture de caisse ?`,
+    () => finaliserCloture(d)
   );
-  if (!confirme) return;
+}
 
+async function finaliserCloture(d){
   const doc = genererPdfCloture(d);
   const pdfBase64 = doc.output('datauristring').split(',')[1];
 
@@ -3703,8 +4363,9 @@ function renderParamTabs(){
   const tabs = Object.keys(TYPE_CONFIG).map(t =>
     `<button class="tab-btn ${t === currentParamType ? 'active' : ''}" onclick="selectParamType('${t}')">${t}</button>`
   ).join('');
+  const fournisseurTab = `<button class="tab-btn ${currentParamType === 'Fournisseurs' ? 'active' : ''}" onclick="selectParamType('Fournisseurs')">Fournisseurs</button>`;
   const secuTab = `<button class="tab-btn ${currentParamType === 'Securite' ? 'active' : ''}" onclick="selectParamType('Securite')">Sécurité</button>`;
-  wrap.innerHTML = tabs + secuTab;
+  wrap.innerHTML = tabs + fournisseurTab + secuTab;
 }
 
 function selectParamType(type){
@@ -3715,12 +4376,24 @@ function selectParamType(type){
     document.getElementById('paramAddCard').style.display = 'none';
     document.getElementById('paramList').style.display = 'none';
     document.getElementById('securiteCard').style.display = 'block';
+    document.getElementById('fournisseurCard').style.display = 'none';
     loadSecuriteSettingsIntoForm();
     return;
   }
+
+  if (type === 'Fournisseurs'){
+    document.getElementById('paramAddCard').style.display = 'none';
+    document.getElementById('paramList').style.display = 'none';
+    document.getElementById('securiteCard').style.display = 'none';
+    document.getElementById('fournisseurCard').style.display = 'block';
+    loadFournisseursSection();
+    return;
+  }
+
   document.getElementById('paramAddCard').style.display = '';
   document.getElementById('paramList').style.display = '';
   document.getElementById('securiteCard').style.display = 'none';
+  document.getElementById('fournisseurCard').style.display = 'none';
 
   renderParamList();
 
@@ -4413,7 +5086,8 @@ const noteContexts = {
 };
 
 async function loadNotes(){
-  const notes = await apiGet('getNotes');
+  const notes = await (preloadNotes || apiGet('getNotes'));
+  preloadNotes = null; // consommée : les prochains rechargements refont un appel normal
   if (notes && notes.error){
     Object.values(noteContexts).forEach(c => {
       const el = document.getElementById(c.list);
