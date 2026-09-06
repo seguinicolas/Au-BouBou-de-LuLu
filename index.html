@@ -1816,7 +1816,7 @@ function handleComptaViewShow(){
 }
 
 // ---------- Compta : filtre mois/année + onglets (Chiffre d'affaires, Compte, Dépense, Recette, Dépôt banque...) ----------
-const COMPTA_TABS = ["Chiffre d'affaires", 'Compte', 'Dépense', 'Recette', 'Dépôt banque'];
+const COMPTA_TABS = ["Chiffre d'affaires", 'Compte', 'Dépense', 'Récapitulatif', 'Dépôt banque'];
 const COMPTA_MOIS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 
 let currentComptaTab = COMPTA_TABS[0];
@@ -1825,6 +1825,7 @@ let currentComptaAnnee = new Date().getFullYear();
 let comptaPageInitialized = false;
 let comptaAnneesDisponibles = [];
 let comptaDataVentes = [];
+let comptaDataVentesLignes = [];
 let comptaDataOuvertureCloture = [];
 let comptaDataDepenses = [];
 
@@ -1867,12 +1868,14 @@ async function onComptaFilterChange(){
 // onglet par onglet.
 async function chargerDonneesComptaAnnee(){
   document.getElementById('comptaTabContent').innerHTML = '<div class="empty">Chargement…</div>';
-  const [ventes, ouvertureCloture, depenses] = await Promise.all([
+  const [ventes, ventesLignes, ouvertureCloture, depenses] = await Promise.all([
     apiGet('getVentesAnnee', { annee: currentComptaAnnee }),
+    apiGet('getVentesLignesAnnee', { annee: currentComptaAnnee }),
     apiGet('getOuvertureClotureAnnee', { annee: currentComptaAnnee }),
     apiGet('getDepensesAnnee', { annee: currentComptaAnnee })
   ]);
   comptaDataVentes = Array.isArray(ventes) ? ventes : [];
+  comptaDataVentesLignes = Array.isArray(ventesLignes) ? ventesLignes : [];
   comptaDataOuvertureCloture = Array.isArray(ouvertureCloture) ? ouvertureCloture : [];
   comptaDataDepenses = Array.isArray(depenses) ? depenses : [];
 }
@@ -1910,6 +1913,11 @@ function renderComptaTabContent(){
 
   if (currentComptaTab === 'Compte'){
     renderComptaCompte(wrap);
+    return;
+  }
+
+  if (currentComptaTab === 'Récapitulatif'){
+    renderComptaRecapitulatif(wrap);
     return;
   }
 
@@ -1996,7 +2004,91 @@ function renderComptaCA(wrap){
     </table>`;
 }
 
-// Onglet "Dépôt banque" : 4 sous-filtres (Tous / Espèces / Chèques / CB).
+// Onglet "Récapitulatif" : un tableau annuel, une ligne par mois (toujours les
+// 12 mois, indépendamment du filtre mois/année choisi ailleurs — seule
+// l'année compte ici). Colonnes : CA, nombre de clients distincts, dépenses
+// Fonctionnement, dépenses Fourniture, et Cotisation URSSAF estimée
+// (20% des prestations + 10% des ventes de marchandise, calculée à partir
+// des lignes de vente).
+function renderComptaRecapitulatif(wrap){
+  // Vente -> {mois, statut} pour relier les lignes de vente à un mois
+  const venteInfo = {};
+  comptaDataVentes.forEach(v => {
+    const key = normalizeDateStr(v.Date);
+    if (!key) return;
+    venteInfo[v.ID_Vente] = { mois: Number(key.slice(5, 7)) - 1, statut: v.Statut };
+  });
+
+  const moisData = Array.from({ length: 12 }, () => ({
+    ca: 0, prestation: 0, vente: 0, fonctionnement: 0, fourniture: 0, clients: new Set()
+  }));
+
+  comptaDataVentes.forEach(v => {
+    if (v.Statut === 'Annulée') return;
+    const key = normalizeDateStr(v.Date);
+    if (!key) return;
+    const mois = Number(key.slice(5, 7)) - 1;
+    if (mois < 0 || mois > 11) return;
+    moisData[mois].ca += Number(v.Total) || 0;
+    if (v.ID_Client) moisData[mois].clients.add(v.ID_Client);
+  });
+
+  comptaDataVentesLignes.forEach(l => {
+    const info = venteInfo[l.ID_Vente];
+    if (!info || info.statut === 'Annulée') return;
+    const mois = info.mois;
+    if (mois < 0 || mois > 11) return;
+    const montant = (Number(l.Prix) || 0) * (Number(l.Quantite) || 1);
+    if (l.Type === 'Service') moisData[mois].prestation += montant;
+    else if (l.Type === 'Vente') moisData[mois].vente += montant;
+  });
+
+  comptaDataDepenses.forEach(d => {
+    const key = normalizeDateStr(d.Date);
+    if (!key) return;
+    const mois = Number(key.slice(5, 7)) - 1;
+    if (mois < 0 || mois > 11) return;
+    const montant = Number(d.Montant) || 0;
+    if (d.Categorie === 'Fonctionnement') moisData[mois].fonctionnement += montant;
+    else if (d.Categorie === 'Fourniture') moisData[mois].fourniture += montant;
+  });
+
+  const clientsAnnee = new Set();
+  let totalCA = 0, totalFonctionnement = 0, totalFourniture = 0, totalCotisation = 0;
+
+  const rows = COMPTA_MOIS.map((nomMois, i) => {
+    const m = moisData[i];
+    const cotisation = 0.20 * m.prestation + 0.10 * m.vente;
+    m.clients.forEach(c => clientsAnnee.add(c));
+    totalCA += m.ca;
+    totalFonctionnement += m.fonctionnement;
+    totalFourniture += m.fourniture;
+    totalCotisation += cotisation;
+    return `<tr>
+      <td>${nomMois}</td>
+      <td class="amt">${m.ca.toFixed(2)} €</td>
+      <td>${m.clients.size}</td>
+      <td class="amt">${m.fonctionnement.toFixed(2)} €</td>
+      <td class="amt">${m.fourniture.toFixed(2)} €</td>
+      <td class="amt">${cotisation.toFixed(2)} €</td>
+    </tr>`;
+  }).join('');
+
+  const totalRow = `<tr style="font-weight:700;">
+    <td>Total</td>
+    <td class="amt">${totalCA.toFixed(2)} €</td>
+    <td>${clientsAnnee.size}</td>
+    <td class="amt">${totalFonctionnement.toFixed(2)} €</td>
+    <td class="amt">${totalFourniture.toFixed(2)} €</td>
+    <td class="amt">${totalCotisation.toFixed(2)} €</td>
+  </tr>`;
+
+  wrap.innerHTML = `
+    <table class="analyse-table">
+      <thead><tr><th>Mois</th><th>CA</th><th>Nbr de client</th><th>Fonctionnement</th><th>Fourniture</th><th>Cotisation</th></tr></thead>
+      <tbody>${rows}${totalRow}</tbody>
+    </table>`;
+}
 // Espèces et Chèques viennent des montants remis en banque à la clôture
 // (Remise_Especes, Remise_Cheque) ; la CB n'a pas de "remise" physique,
 // elle arrive automatiquement via le terminal, donc on affiche le montant
