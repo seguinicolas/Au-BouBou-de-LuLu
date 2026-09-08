@@ -772,13 +772,14 @@
     padding:16px;
   }
   .analyse-table{
-    width:100%;
+    width:auto;
+    max-width:1300px;
     border-collapse:collapse;
     font-size:0.85rem;
   }
   .analyse-table th{
     text-align:left;
-    padding:8px 6px;
+    padding:8px 24px 8px 6px;
     border-bottom:2px solid var(--line);
     color:var(--ink-soft);
     font-size:0.72rem;
@@ -786,11 +787,13 @@
     letter-spacing:0.04em;
   }
   .analyse-table td{
-    padding:8px 6px;
+    padding:8px 24px 8px 6px;
     border-bottom:1px solid var(--line);
+    text-align:left;
   }
   .analyse-table tr:last-child td{ border-bottom:none; }
-  .analyse-table td.amt{ text-align:right; font-weight:700; white-space:nowrap; }
+  .analyse-table td.amt{ font-weight:700; white-space:nowrap; }
+  .analyse-table tr.ligne-non-pointee td{ background:#FBE1DE; }
 
   /* ---------- Cloture (3 colonnes, sans scroll) ---------- */
   .cloture-layout{
@@ -808,6 +811,10 @@
   .analyse-table-compact th,
   .analyse-table-compact td{
     padding:4px 6px;
+  }
+  .analyse-table-spacious th,
+  .analyse-table-spacious td{
+    padding:8px 16px;
   }
   @media (max-width: 1000px){
     .cloture-layout{ flex-direction:column; }
@@ -1287,8 +1294,9 @@
         <label>Date</label>
         <input type="date" id="clotureDateInput" onchange="onClotureDateChange()">
       </div>
-      <button class="btn btn-primary no-print" onclick="demanderClotureCaisse()">💾 Clôturer la caisse (enregistrer)</button>
+      <button class="btn btn-primary no-print" id="clotureValiderBtn" onclick="demanderClotureCaisse()">💾 Clôturer la caisse (enregistrer)</button>
       <button class="btn no-print" onclick="imprimerCloture()" style="margin-left:8px;">🖨️ Imprimer</button>
+      <span id="clotureDejaRealiseeBadge" class="meta" style="display:none;color:var(--sage-dark);font-weight:700;margin-left:8px;">✓ Clôture déjà réalisée</span>
     </div>
 
     <div class="cloture-layout">
@@ -1369,7 +1377,7 @@
         <div class="analyse-detail-card">
           <div class="header-label" style="margin-bottom:8px;">Chèques comptés</div>
           <div id="clotureChequeLines"></div>
-          <button class="btn btn-ghost btn-small no-print" style="margin-top:6px;" onclick="addClotureChequeLine()">+ Ajouter un chèque</button>
+          <button id="clotureAjouterChequeBtn" class="btn btn-ghost btn-small no-print" style="margin-top:6px;" onclick="addClotureChequeLine()">+ Ajouter un chèque</button>
           <div class="analyse-recap-row" style="border-bottom:none;padding-top:10px;">
             <div class="arr-label">Total chèques comptés</div>
             <div class="arr-total" id="clotureChequesComptes">0.00 €</div>
@@ -1828,6 +1836,7 @@ let comptaDataVentes = [];
 let comptaDataVentesLignes = [];
 let comptaDataOuvertureCloture = [];
 let comptaDataDepenses = [];
+let comptaDataDepotsManuels = [];
 
 async function initComptaPage(){
   if (comptaPageInitialized) return; // filtre/onglets déjà en place, on ne réinitialise pas la sélection en cours
@@ -1868,16 +1877,18 @@ async function onComptaFilterChange(){
 // onglet par onglet.
 async function chargerDonneesComptaAnnee(){
   document.getElementById('comptaTabContent').innerHTML = '<div class="empty">Chargement…</div>';
-  const [ventes, ventesLignes, ouvertureCloture, depenses] = await Promise.all([
+  const [ventes, ventesLignes, ouvertureCloture, depenses, depotsManuels] = await Promise.all([
     apiGet('getVentesAnnee', { annee: currentComptaAnnee }),
     apiGet('getVentesLignesAnnee', { annee: currentComptaAnnee }),
     apiGet('getOuvertureClotureAnnee', { annee: currentComptaAnnee }),
-    apiGet('getDepensesAnnee', { annee: currentComptaAnnee })
+    apiGet('getDepensesAnnee', { annee: currentComptaAnnee }),
+    apiGet('getDepotsManuelsAnnee', { annee: currentComptaAnnee })
   ]);
   comptaDataVentes = Array.isArray(ventes) ? ventes : [];
   comptaDataVentesLignes = Array.isArray(ventesLignes) ? ventesLignes : [];
   comptaDataOuvertureCloture = Array.isArray(ouvertureCloture) ? ouvertureCloture : [];
   comptaDataDepenses = Array.isArray(depenses) ? depenses : [];
+  comptaDataDepotsManuels = Array.isArray(depotsManuels) ? depotsManuels : [];
 }
 
 function renderComptaTabs(){
@@ -2020,7 +2031,7 @@ function renderComptaRecapitulatif(wrap){
   });
 
   const moisData = Array.from({ length: 12 }, () => ({
-    ca: 0, prestation: 0, vente: 0, fonctionnement: 0, fourniture: 0, clients: new Set()
+    ca: 0, prestation: 0, vente: 0, fonctionnement: 0, fourniture: 0, clients: new Set(), ventesCount: 0
   }));
 
   comptaDataVentes.forEach(v => {
@@ -2030,6 +2041,7 @@ function renderComptaRecapitulatif(wrap){
     const mois = Number(key.slice(5, 7)) - 1;
     if (mois < 0 || mois > 11) return;
     moisData[mois].ca += Number(v.Total) || 0;
+    moisData[mois].ventesCount++;
     if (v.ID_Client) moisData[mois].clients.add(v.ID_Client);
   });
 
@@ -2054,38 +2066,50 @@ function renderComptaRecapitulatif(wrap){
   });
 
   const clientsAnnee = new Set();
-  let totalCA = 0, totalFonctionnement = 0, totalFourniture = 0, totalCotisation = 0;
+  let totalCA = 0, totalFonctionnement = 0, totalFourniture = 0;
+  let totalCotisationService = 0, totalCotisationVente = 0, totalVentesCount = 0;
 
   const rows = COMPTA_MOIS.map((nomMois, i) => {
     const m = moisData[i];
-    const cotisation = 0.20 * m.prestation + 0.10 * m.vente;
+    const cotisationService = 0.20 * m.prestation;
+    const cotisationVente = 0.10 * m.vente;
+    const panierMoyen = m.ventesCount > 0 ? m.ca / m.ventesCount : 0;
     m.clients.forEach(c => clientsAnnee.add(c));
     totalCA += m.ca;
     totalFonctionnement += m.fonctionnement;
     totalFourniture += m.fourniture;
-    totalCotisation += cotisation;
+    totalCotisationService += cotisationService;
+    totalCotisationVente += cotisationVente;
+    totalVentesCount += m.ventesCount;
     return `<tr>
       <td>${nomMois}</td>
       <td class="amt">${m.ca.toFixed(2)} €</td>
+      <td class="amt">${panierMoyen.toFixed(2)} €</td>
       <td>${m.clients.size}</td>
       <td class="amt">${m.fonctionnement.toFixed(2)} €</td>
       <td class="amt">${m.fourniture.toFixed(2)} €</td>
-      <td class="amt">${cotisation.toFixed(2)} €</td>
+      <td class="amt">${cotisationService.toFixed(2)} €</td>
+      <td class="amt">${cotisationVente.toFixed(2)} €</td>
+      <td class="amt">${(cotisationService + cotisationVente).toFixed(2)} €</td>
     </tr>`;
   }).join('');
 
+  const totalPanierMoyen = totalVentesCount > 0 ? totalCA / totalVentesCount : 0;
   const totalRow = `<tr style="font-weight:700;">
     <td>Total</td>
     <td class="amt">${totalCA.toFixed(2)} €</td>
+    <td class="amt">${totalPanierMoyen.toFixed(2)} €</td>
     <td>${clientsAnnee.size}</td>
     <td class="amt">${totalFonctionnement.toFixed(2)} €</td>
     <td class="amt">${totalFourniture.toFixed(2)} €</td>
-    <td class="amt">${totalCotisation.toFixed(2)} €</td>
+    <td class="amt">${totalCotisationService.toFixed(2)} €</td>
+    <td class="amt">${totalCotisationVente.toFixed(2)} €</td>
+    <td class="amt">${(totalCotisationService + totalCotisationVente).toFixed(2)} €</td>
   </tr>`;
 
   wrap.innerHTML = `
-    <table class="analyse-table">
-      <thead><tr><th>Mois</th><th>CA</th><th>Nbr de client</th><th>Fonctionnement</th><th>Fourniture</th><th>Cotisation</th></tr></thead>
+    <table class="analyse-table analyse-table-spacious">
+      <thead><tr><th>Mois</th><th>CA</th><th>Panier moyen</th><th>Nbr de client</th><th>Fonctionnement</th><th>Fourniture</th><th>Cotisation Service</th><th>Cotisation Vente</th><th>Total Cotisation</th></tr></thead>
       <tbody>${rows}${totalRow}</tbody>
     </table>`;
 }
@@ -2177,7 +2201,93 @@ function renderComptaDepotBanque(wrap){
     }
   }
 
-  wrap.innerHTML = `<div class="compta-tabs param-tabs">${sousFiltres}</div>${tableHtml}`;
+  const lignesManuelles = comptaDataDepotsManuels
+    .filter(d => {
+      const key = normalizeDateStr(d.Date);
+      if (!key) return false;
+      if (currentComptaMois !== 'annee' && Number(key.slice(5, 7)) - 1 !== currentComptaMois) return false;
+      return true;
+    })
+    .map(d => ({
+      id: d.ID_Depot,
+      key: normalizeDateStr(d.Date),
+      type: d.Type || '',
+      montant: Number(d.Montant) || 0,
+      notes: d.Notes || ''
+    }))
+    .sort((a, b) => a.key.localeCompare(b.key));
+
+  let totalManuel = 0;
+  const lignesManuellesHtml = lignesManuelles.map(d => {
+    totalManuel += d.montant;
+    return `<tr>
+      <td>${formatDateFR(d.key)}</td>
+      <td>${d.type || '—'}</td>
+      <td>${d.notes || '—'}</td>
+      <td class="amt">${d.montant.toFixed(2)} €</td>
+      <td><button class="btn-delete" onclick="removeDepotManuel('${d.id}')">✕</button></td>
+    </tr>`;
+  }).join('');
+
+  const tableManuelHtml = lignesManuelles.length ? `
+    <table class="analyse-table" style="margin-top:14px;">
+      <thead><tr><th>Date</th><th>Type</th><th>Notes</th><th>Montant</th><th></th></tr></thead>
+      <tbody>
+        ${lignesManuellesHtml}
+        <tr style="font-weight:700;"><td colspan="3">Total</td><td class="amt">${totalManuel.toFixed(2)} €</td><td></td></tr>
+      </tbody>
+    </table>` : `<div class="empty" style="margin-top:14px;">Aucun dépôt saisi manuellement pour cette période.</div>`;
+
+  wrap.innerHTML = `
+    <div class="compta-tabs param-tabs">${sousFiltres}</div>
+    ${tableHtml}
+    <div class="card" style="padding:14px 16px;margin-top:24px;margin-bottom:4px;">
+      <div class="section-title"><span>Ajouter un dépôt banque manuellement</span></div>
+      <div class="grid3">
+        <div class="field-row"><label>Date</label><input type="date" id="depotManuelDate" value="${todayStr()}"></div>
+        <div class="field-row"><label>Type</label>
+          <select id="depotManuelType">
+            <option value="Especes">Espèces</option>
+            <option value="Cheque">Chèques</option>
+            <option value="CB">CB</option>
+          </select>
+        </div>
+        <div class="field-row"><label>Montant (€)</label><input type="number" id="depotManuelMontant" step="0.01" min="0" placeholder="0.00"></div>
+      </div>
+      <div class="field-row" style="margin-top:8px;"><label>Notes</label><input type="text" id="depotManuelNotes" placeholder="Ex : régularisation, oubli de clôture..."></div>
+      <button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="addDepotManuelUI()">+ Ajouter</button>
+    </div>
+    ${tableManuelHtml}`;
+}
+
+async function addDepotManuelUI(){
+  const date = document.getElementById('depotManuelDate').value;
+  const type = document.getElementById('depotManuelType').value;
+  const montant = document.getElementById('depotManuelMontant').value;
+  const notes = document.getElementById('depotManuelNotes').value.trim();
+
+  if (!date){ toast('Choisis une date'); return; }
+  if (!montant || Number(montant) <= 0){ toast('Renseigne un montant'); return; }
+
+  toast('Ajout...');
+  const res = await apiPost('addDepotManuel', { Date: date, Type: type, Montant: montant, Notes: notes });
+  if (res.error){ toast('Erreur : ' + res.error); return; }
+
+  toast('Dépôt ajouté ✓');
+  await chargerDonneesComptaAnnee();
+  renderComptaTabContent();
+}
+
+async function removeDepotManuel(id){
+  if (!confirm('Supprimer ce dépôt ?')) return;
+
+  toast('Suppression...');
+  const res = await apiPost('deleteDepotManuel', { ID_Depot: id, Annee: currentComptaAnnee });
+  if (res.error){ toast('Erreur : ' + res.error); return; }
+
+  toast('Supprimé ✓');
+  await chargerDonneesComptaAnnee();
+  renderComptaTabContent();
 }
 
 // Onglet "Dépense" : formulaire inline en haut (Date / Fournisseur / Montant,
@@ -2295,25 +2405,34 @@ async function removeDepense(id){
   renderComptaTabContent();
 }
 
-// Onglet "Compte" : généré automatiquement, aucune saisie ici. Fusionne
-// chronologiquement les Dépenses (sorties) et les Dépôts banque (entrées —
-// espèces + chèques + CB remis/encaissés à la clôture), avec un solde qui se
-// cumule ligne après ligne. Le solde repart à 0 en début de période filtrée
-// (pas de report d'un solde antérieur pour l'instant).
-function renderComptaCompte(wrap){
+// Onglet "Compte" : généré automatiquement (à part le pointage). Fusionne
+// chronologiquement les Dépenses (sorties) et les Dépôts banque scindés par
+// type (entrées), avec un solde cumulé qui ne repart JAMAIS à 0 : le filtre
+// mois/année ne sert qu'à choisir quelles lignes sont affichées, jamais à
+// recalculer le point de départ du solde. Chaque ligne peut être "pointée"
+// (= apparue sur le relevé de banque), ce qui alimente les 4 encarts de
+// rapprochement bancaire au-dessus du tableau.
+
+// Solde de report des années précédentes. Le backend doit le calculer une
+// seule fois (le 1er jour de l'année suivante, au moment où Compta_yyyy est
+// auto-créé) et l'exposer ; en attendant que cette route existe, on part de 0.
+let SOLDE_REPORT_COMPTE = 0;
+
+function buildComptaCompteLignes(){
   const lignes = [];
 
   comptaDataDepenses.forEach(d => {
     const key = normalizeDateStr(d.Date);
     if (!key) return;
-    if (currentComptaMois !== 'annee' && Number(key.slice(5, 7)) - 1 !== currentComptaMois) return;
     lignes.push({
       key: key,
+      id: 'dep_' + d.ID_Depense,
       designation: d.Designation || d.Fournisseur || 'Dépense',
       fournisseur: d.Fournisseur || '—',
       categorie: d.Categorie || d['Catégorie'] || '—',
       type: 'Dépense',
-      montant: -(Number(d.Montant) || 0)
+      montant: -(Number(d.Montant) || 0),
+      pointe: !!d.Pointe
     });
   });
 
@@ -2321,46 +2440,154 @@ function renderComptaCompte(wrap){
     if (!o.PDF_URL) return; // pas de clôture faite ce jour-là : rien à déposer
     const key = normalizeDateStr(o.Date);
     if (!key) return;
-    if (currentComptaMois !== 'annee' && Number(key.slice(5, 7)) - 1 !== currentComptaMois) return;
-    const total = (Number(o.Remise_Especes) || 0) + (Number(o.Remise_Cheque) || 0) + (Number(o.Compte_CB_Montant) || 0);
-    if (total <= 0) return;
-    lignes.push({
-      key: key,
-      designation: 'Dépôt banque',
-      fournisseur: '—',
-      categorie: '—',
-      type: 'Recette',
-      montant: total
+
+    // Scindé en 3 lignes distinctes (espèces, chèques et CB n'arrivent pas
+    // forcément le même jour sur le relevé bancaire) pour un pointage
+    // indépendant de chacune.
+    const depots = [
+      { montant: Number(o.Remise_Especes) || 0, designation: 'Dépôt banque - Espèces', typeDepot: 'Especes', pointe: !!o.Pointe_Especes },
+      { montant: Number(o.Remise_Cheque) || 0, designation: 'Dépôt banque - Chèques', typeDepot: 'Cheque', pointe: !!o.Pointe_Cheque },
+      { montant: Number(o.Compte_CB_Montant) || 0, designation: 'Dépôt banque - CB', typeDepot: 'CB', pointe: !!o.Pointe_CB }
+    ];
+    depots.forEach(d => {
+      if (d.montant <= 0) return;
+      lignes.push({
+        key: key,
+        id: 'depot_' + key + '_' + d.typeDepot,
+        designation: d.designation,
+        fournisseur: '—',
+        categorie: '—',
+        type: 'Recette',
+        montant: d.montant,
+        pointe: d.pointe
+      });
     });
   });
 
-  if (lignes.length === 0){
+  comptaDataDepotsManuels.forEach(m => {
+    const key = normalizeDateStr(m.Date);
+    if (!key) return;
+    const libelleType = m.Type === 'Especes' ? 'Espèces' : m.Type === 'Cheque' ? 'Chèques' : m.Type === 'CB' ? 'CB' : m.Type || '';
+    lignes.push({
+      key: key,
+      id: 'depotmanuel_' + m.ID_Depot,
+      designation: 'Dépôt banque manuel - ' + libelleType + (m.Notes ? ' (' + m.Notes + ')' : ''),
+      fournisseur: '—',
+      categorie: '—',
+      type: 'Recette',
+      montant: Number(m.Montant) || 0,
+      pointe: !!m.Pointe
+    });
+  });
+
+  lignes.sort((a, b) => a.key.localeCompare(b.key));
+
+  let soldeTheo = SOLDE_REPORT_COMPTE;
+  let soldeReel = SOLDE_REPORT_COMPTE;
+  lignes.forEach(l => {
+    soldeTheo += l.montant;
+    if (l.pointe) soldeReel += l.montant;
+    l.soldeTheoApres = soldeTheo;
+    l.soldeReelApres = soldeReel;
+  });
+
+  return lignes;
+}
+
+function renderComptaCompte(wrap){
+  const toutesLesLignes = buildComptaCompteLignes();
+
+  if (toutesLesLignes.length === 0){
     wrap.innerHTML = `<div class="empty">Aucun mouvement pour cette période.</div>`;
     return;
   }
 
-  lignes.sort((a, b) => a.key.localeCompare(b.key));
+  // Les 4 encarts reflètent la situation réelle actuelle (toutes les
+  // lignes de l'année, indépendamment du filtre mois affiché) : ils
+  // répondent à "où en est le compte en ce moment", pas "ce mois-ci".
+  const derniere = toutesLesLignes[toutesLesLignes.length - 1];
+  const soldeTheorique = derniere.soldeTheoApres;
+  const soldeReel = derniere.soldeReelApres;
+  const debitEnAttente = toutesLesLignes
+    .filter(l => l.type === 'Dépense' && !l.pointe)
+    .reduce((s, l) => s + Math.abs(l.montant), 0);
+  const creditEnAttente = toutesLesLignes
+    .filter(l => l.type === 'Recette' && !l.pointe)
+    .reduce((s, l) => s + l.montant, 0);
 
-  let solde = 0;
-  const rows = lignes.map(l => {
-    solde += l.montant;
+  const lignesAffichees = toutesLesLignes.filter(l =>
+    currentComptaMois === 'annee' || Number(l.key.slice(5, 7)) - 1 === currentComptaMois
+  );
+
+  const rows = lignesAffichees.map(l => {
     const signe = l.montant >= 0 ? '+' : '';
-    return `<tr>
+    return `<tr class="${l.pointe ? '' : 'ligne-non-pointee'}">
       <td>${formatDateFR(l.key)}</td>
       <td>${l.designation}</td>
       <td>${l.fournisseur}</td>
       <td>${l.categorie}</td>
       <td class="amt">${signe}${l.montant.toFixed(2)} €</td>
       <td>${l.type}</td>
-      <td class="amt">${solde.toFixed(2)} €</td>
+      <td class="amt">${l.soldeTheoApres.toFixed(2)} €</td>
+      <td style="text-align:center;">
+        <input type="checkbox" ${l.pointe ? 'checked' : ''} onchange="togglePointageCompte('${l.id}', this.checked)">
+      </td>
     </tr>`;
   }).join('');
 
   wrap.innerHTML = `
+    <div class="compta-solde-encarts" style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:150px;padding:12px;border:1px solid var(--line,#ddd);border-radius:8px;">
+        <div style="font-size:0.8rem;color:var(--ink-soft,#666);">Solde théorique</div>
+        <div style="font-size:1.3rem;font-weight:700;">${soldeTheorique.toFixed(2)} €</div>
+      </div>
+      <div style="flex:1;min-width:150px;padding:12px;border:1px solid var(--line,#ddd);border-radius:8px;">
+        <div style="font-size:0.8rem;color:var(--ink-soft,#666);">Solde réel (banque)</div>
+        <div style="font-size:1.3rem;font-weight:700;">${soldeReel.toFixed(2)} €</div>
+      </div>
+      <div style="flex:1;min-width:150px;padding:12px;border:1px solid var(--line,#ddd);border-radius:8px;">
+        <div style="font-size:0.8rem;color:var(--ink-soft,#666);">Débit en attente</div>
+        <div style="font-size:1.3rem;font-weight:700;color:#B0453B;">-${debitEnAttente.toFixed(2)} €</div>
+      </div>
+      <div style="flex:1;min-width:150px;padding:12px;border:1px solid var(--line,#ddd);border-radius:8px;">
+        <div style="font-size:0.8rem;color:var(--ink-soft,#666);">Crédit en attente</div>
+        <div style="font-size:1.3rem;font-weight:700;color:#2E7D32;">+${creditEnAttente.toFixed(2)} €</div>
+      </div>
+    </div>
     <table class="analyse-table">
-      <thead><tr><th>Date</th><th>Désignation</th><th>Fournisseur</th><th>Catégorie</th><th>Somme</th><th>Type</th><th>Solde</th></tr></thead>
+      <thead><tr><th>Date</th><th>Désignation</th><th>Fournisseur</th><th>Catégorie</th><th>Somme</th><th>Type</th><th>Solde</th><th>Pointé</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
+}
+
+// Persiste le pointage d'une ligne (dépense ou dépôt banque) côté backend.
+// Mise à jour optimiste locale immédiate, puis appel API, puis rafraîchissement.
+async function togglePointageCompte(id, pointe){
+  if (id.indexOf('dep_') === 0){
+    const idDepense = id.slice(4);
+    const d = comptaDataDepenses.find(x => String(x.ID_Depense) === idDepense);
+    if (d) d.Pointe = pointe;
+    await apiPost('setPointageDepense', { ID_Depense: idDepense, Annee: currentComptaAnnee, Pointe: pointe });
+  } else if (id.indexOf('depot_') === 0){
+    const rest = id.slice(6);
+    const sepIdx = rest.lastIndexOf('_');
+    const dateKey = rest.slice(0, sepIdx);
+    const typeDepot = rest.slice(sepIdx + 1);
+    const o = comptaDataOuvertureCloture.find(x => normalizeDateStr(x.Date) === dateKey);
+    if (o){
+      if (typeDepot === 'Especes') o.Pointe_Especes = pointe;
+      if (typeDepot === 'Cheque') o.Pointe_Cheque = pointe;
+      if (typeDepot === 'CB') o.Pointe_CB = pointe;
+    }
+    await apiPost('setPointageDepot', { Date: dateKey, Type: typeDepot, Annee: currentComptaAnnee, Pointe: pointe });
+  } else if (id.indexOf('depotmanuel_') === 0){
+    const idDepot = id.slice(12);
+    const m = comptaDataDepotsManuels.find(x => String(x.ID_Depot) === idDepot);
+    if (m) m.Pointe = pointe;
+    await apiPost('setPointageDepotManuel', { ID_Depot: idDepot, Annee: currentComptaAnnee, Pointe: pointe });
+  }
+
+  renderComptaTabContent();
 }
 // Race/Prestation/Sécurité), dans le même esprit que la fiche Client — fiche
 // CRUD complète (création/modif/suppression). Le nom d'entreprise alimentera
@@ -2647,9 +2874,8 @@ let ouvertureCaisseData = null;
 let ouvertureSelectedDate = null;
 
 async function loadOuvertureCaisse(){
-  if (!ouvertureSelectedDate){
-    ouvertureSelectedDate = todayStr();
-  }
+  ouvertureSelectedDate = todayStr(); // toujours reparti sur aujourd'hui a l'ouverture de la page,
+  // pour eviter de rester bloque sur une ancienne date choisie lors d'une visite precedente
   document.getElementById('ouvertureDateInput').value = ouvertureSelectedDate;
 
   const status = document.getElementById('ouvertureStatus');
@@ -2732,11 +2958,11 @@ const CLOTURE_DENOMINATIONS = [50, 20, 10, 5, 2, 1, 0.5, 0.2, 0.1, 0.05, 0.02, 0
 let clotureSelectedDate = null;
 let clotureVentesAll = null; // cache des ventes de l'annee, filtrees par jour ensuite
 let clotureChequeCounter = 0;
+let clotureLectureSeule = false; // true quand la cloture du jour selectionne est deja validee
 
 async function loadCloture(){
-  if (!clotureSelectedDate){
-    clotureSelectedDate = todayStr();
-  }
+  clotureSelectedDate = todayStr(); // toujours reparti sur aujourd'hui a l'ouverture de la page,
+  // pour eviter de rester bloque sur une ancienne date choisie lors d'une visite precedente
   document.getElementById('clotureDateInput').value = clotureSelectedDate;
 
   renderClotureDenomTable();
@@ -2758,6 +2984,8 @@ async function loadCloture(){
   updateClotureFondOuverture();
   updateClotureEspeces();
   updateClotureCheques();
+
+  refreshClotureAffichage();
 }
 
 function onClotureDateChange(){
@@ -2779,6 +3007,81 @@ function onClotureDateChange(){
   updateClotureFondOuverture();
   updateClotureEspeces();
   updateClotureCheques();
+
+  refreshClotureAffichage();
+}
+
+// Verifie si le jour selectionne a deja une cloture validee (PDF_URL renseigne) et,
+// si oui, bascule l'ecran en lecture seule avec les valeurs sauvegardees. Le detail
+// par coupure et par cheque n'est pas conserve cote serveur (seuls les totaux le sont) :
+// on affiche donc les totaux comptes a la place du tableau de saisie coupure par coupure.
+function refreshClotureAffichage(){
+  const entry = (ouvertureCaisseData || []).find(o => normalizeDateStr(o.Date) === clotureSelectedDate);
+  const dejaRealisee = !!(entry && entry.PDF_URL);
+
+  document.getElementById('clotureDejaRealiseeBadge').style.display = dejaRealisee ? 'inline' : 'none';
+  document.getElementById('clotureValiderBtn').disabled = dejaRealisee;
+
+  if (dejaRealisee){
+    afficherClotureValidee(entry);
+  } else {
+    activerSaisieCloture();
+  }
+}
+
+function afficherClotureValidee(entry){
+  clotureLectureSeule = true;
+  document.querySelectorAll('#clotureDenomTable input, #clotureDenomTable2 input').forEach(i => { i.value = ''; i.disabled = true; });
+  document.getElementById('clotureChequeLines').innerHTML = '';
+  document.getElementById('clotureAjouterChequeBtn').style.display = 'none';
+
+  const cbNombre = document.getElementById('clotureCbNombreCompte');
+  cbNombre.value = entry.Compte_CB_Nombre || '';
+  cbNombre.disabled = true;
+  const cbMontant = document.getElementById('clotureCbMontantCompte');
+  cbMontant.value = entry.Compte_CB_Montant || '';
+  cbMontant.disabled = true;
+  const remEsp = document.getElementById('clotureRemiseEspeces');
+  remEsp.value = entry.Remise_Especes || '';
+  remEsp.disabled = true;
+  const remChq = document.getElementById('clotureRemiseCheque');
+  remChq.value = entry.Remise_Cheque || '';
+  remChq.disabled = true;
+
+  setDifCell('clotureTheoEspeces', 'clotureCompteEspeces', 'clotureDifEspeces', entry.Theo_Especes, entry.Compte_Especes, entry.Dif_Especes);
+  setDifCell('clotureTheoCheque', 'clotureCompteCheque', 'clotureDifCheque', entry.Theo_Cheque, entry.Compte_Cheque, entry.Dif_Cheque);
+  setDifCell('clotureTheoCB', 'clotureCompteCB', 'clotureDifCB', entry.Theo_CB, entry.Compte_CB_Montant, entry.Dif_CB);
+
+  document.getElementById('clotureNbrCBTheo').textContent = `${parseInt(entry.Nbr_CB_Theo, 10) || 0} encaissement(s)`;
+  document.getElementById('clotureMontantCBTheo').textContent = (parseFloat(entry.Theo_CB) || 0).toFixed(2) + ' €';
+
+  document.getElementById('clotureFondOuverture').textContent = (parseFloat(entry.Fond_Ouverture) || 0).toFixed(2) + ' €';
+  document.getElementById('clotureEspecesComptees').textContent = (parseFloat(entry.Compte_Especes) || 0).toFixed(2) + ' €';
+  document.getElementById('clotureChequesComptes').textContent = (parseFloat(entry.Compte_Cheque) || 0).toFixed(2) + ' €';
+  document.getElementById('clotureNouvelOuverture').textContent = (parseFloat(entry.Nouveau_Fond_Ouverture) || 0).toFixed(2) + ' €';
+}
+
+// Petit utilitaire pour remplir une ligne Theorique/Compte/Ecart a partir de valeurs deja
+// enregistrees, avec la meme mise en forme (couleur) que les fonctions de calcul en direct.
+function setDifCell(theoId, compteId, difId, theoVal, compteVal, difVal){
+  const theo = parseFloat(theoVal) || 0;
+  const compte = parseFloat(compteVal) || 0;
+  const dif = parseFloat(difVal) || 0;
+  document.getElementById(theoId).textContent = theo.toFixed(2) + ' €';
+  document.getElementById(compteId).textContent = compte.toFixed(2) + ' €';
+  const difCell = document.getElementById(difId);
+  difCell.textContent = (dif >= 0 ? '+' : '') + dif.toFixed(2) + ' €';
+  difCell.style.color = Math.abs(dif) < 0.005 ? 'var(--sage-dark)' : '#B0453B';
+}
+
+function activerSaisieCloture(){
+  clotureLectureSeule = false;
+  document.getElementById('clotureAjouterChequeBtn').style.display = '';
+  document.querySelectorAll('#clotureDenomTable input, #clotureDenomTable2 input').forEach(i => { i.disabled = false; });
+  document.getElementById('clotureCbNombreCompte').disabled = false;
+  document.getElementById('clotureCbMontantCompte').disabled = false;
+  document.getElementById('clotureRemiseEspeces').disabled = false;
+  document.getElementById('clotureRemiseCheque').disabled = false;
 }
 
 function renderClotureDenomTable(){
@@ -2872,6 +3175,7 @@ function updateClotureEspeces(){
 }
 
 function addClotureChequeLine(){
+  if (clotureLectureSeule) return;
   clotureChequeCounter++;
   const id = clotureChequeCounter;
   const container = document.getElementById('clotureChequeLines');
@@ -2922,11 +3226,10 @@ function updateClotureCB(){
 }
 
 function updateClotureNouvelOuverture(){
-  const fond = parseFloat(document.getElementById('clotureFondOuverture').textContent) || 0;
   const especesComptees = parseFloat(document.getElementById('clotureEspecesComptees').textContent) || 0;
   const remiseEspeces = parseFloat(document.getElementById('clotureRemiseEspeces').value) || 0;
 
-  const nouveau = fond + especesComptees - remiseEspeces;
+  const nouveau = especesComptees - remiseEspeces;
   document.getElementById('clotureNouvelOuverture').textContent = nouveau.toFixed(2) + ' €';
 }
 
@@ -4410,7 +4713,7 @@ function showView(view){
   document.getElementById('navNotes').classList.toggle('active', view === 'notes');
   document.getElementById('caisseBottomTabs').classList.toggle('show', view === 'caisse');
   document.body.classList.toggle('has-bottom-tabs', view === 'caisse');
-  document.getElementById('mainContainer').classList.toggle('main-wide', view === 'caisse' || view === 'agenda' || view === 'cloture');
+  document.getElementById('mainContainer').classList.toggle('main-wide', view === 'caisse' || view === 'agenda' || view === 'cloture' || view === 'compta');
   closeNav();
   if (view === 'compta'){
     handleComptaViewShow();
