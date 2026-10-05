@@ -362,8 +362,38 @@
       <div class="clients-list" id="listeClients"></div>
     </div>
   </div>
-  <div id="viewNotes" style="display:none" class="placeholder-page"><h2>Notes</h2><p>Page pas encore construite.</p></div>
-  <div id="viewAgenda" style="display:none" class="placeholder-page"><h2>Agenda</h2><p>Page pas encore construite.</p></div>
+  <div id="viewNotes" style="display:none">
+    <div class="clients-page">
+      <div class="card" style="margin-bottom:14px;">
+        <div class="form-ajout-title" id="noteFormTitre">Nouvelle note</div>
+        <input type="hidden" id="noteEditId">
+        <textarea id="noteContenu" rows="3" placeholder="Écris ta note ici..." style="width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;font-family:inherit;font-size:0.9rem;"></textarea>
+        <button class="btn btn-primary" style="width:100%;margin-top:10px;" onclick="enregistrerNote()">+ Ajouter</button>
+      </div>
+      <div id="listeNotes"></div>
+    </div>
+  </div>
+  <div id="viewAgenda" style="display:none">
+    <div class="caisse-layout">
+      <aside class="caisse-sidebar">
+        <div class="card mini-calendar-card">
+          <div class="cal-head">
+            <button onclick="changerMoisAgenda(-1)">‹</button>
+            <strong id="agendaMoisLabel"></strong>
+            <button onclick="changerMoisAgenda(1)">›</button>
+          </div>
+          <div class="cal-grid" id="agendaCalGrid"></div>
+        </div>
+        <button class="btn btn-primary" style="width:100%;" onclick="ouvrirModalRdv()">+ Nouveau rendez-vous</button>
+      </aside>
+      <div class="caisse-main">
+        <div class="card">
+          <div class="header-label" id="agendaJourLabel">Rendez-vous</div>
+          <div id="listeRdvJour"></div>
+        </div>
+      </div>
+    </div>
+  </div>
   <div id="viewOuverture" style="display:none" class="placeholder-page"><h2>Ouverture caisse</h2><p>Page pas encore construite.</p></div>
   <div id="viewAnalyse" style="display:none" class="placeholder-page"><h2>Analyse</h2><p>Page pas encore construite.</p></div>
   <div id="viewCloture" style="display:none" class="placeholder-page"><h2>Clôture</h2><p>Page pas encore construite.</p></div>
@@ -434,6 +464,29 @@
 
 </main>
 
+<div class="modal-overlay" id="modalOverlayRdv" onclick="if(event.target===this) fermerModalRdv()">
+  <div class="modal-sheet">
+    <h3 id="rdvModalTitre">Nouveau rendez-vous</h3>
+    <div class="form-row-2">
+      <div class="champ"><label>Date</label><input type="date" id="rdvDate"></div>
+      <div class="champ"><label>Heure</label><input type="time" id="rdvHeure"></div>
+    </div>
+    <div class="form-row-2">
+      <div class="champ"><label>Durée (min)</label><input type="number" step="5" id="rdvDuree"></div>
+      <div class="champ"><label>Client</label><select id="rdvClient" onchange="peuplerAnimalRdv()"></select></div>
+    </div>
+    <div class="form-row-2">
+      <div class="champ"><label>Animal</label><select id="rdvAnimal"></select></div>
+      <div class="champ"><label>Prestation</label><select id="rdvPrestation"></select></div>
+    </div>
+    <div class="champ"><label>Notes</label><textarea id="rdvNotes" rows="2"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="fermerModalRdv()">Annuler</button>
+      <button class="btn btn-primary" onclick="enregistrerRdv()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modalOverlayAnimal" onclick="if(event.target===this) fermerModalAnimal()">
   <div class="modal-sheet">
     <h3 id="animalModalTitre">Nouvel animal</h3>
@@ -501,8 +554,8 @@
 const MENU_ITEMS = [
   { id:'caisse',      label:'Caisse',          done:true  },
   { id:'clients',     label:'Clients',         done:true  },
-  { id:'notes',       label:'Notes',           done:false },
-  { id:'agenda',      label:'Agenda',          done:false },
+  { id:'notes',       label:'Notes',           done:true  },
+  { id:'agenda',      label:'Agenda',          done:true  },
   { id:'ouverture',   label:'Ouverture caisse',done:false },
   { id:'analyse',     label:'Analyse',         done:false },
   { id:'cloture',     label:'Clôture',         done:false },
@@ -533,6 +586,8 @@ function showView(view){
   });
   document.getElementById('caisseBottomTabs').classList.toggle('show', view === 'caisse');
   document.getElementById('navMenu').classList.remove('show');
+  if (view === 'notes') loadNotes();
+  if (view === 'agenda') loadAgendaData();
 }
 
 function selectParamTab(btn, tab){
@@ -677,6 +732,33 @@ setInterval(updateHeaderDate, 30000);
 // autorisation couvre tous les fichiers du dossier (pas un clic par fichier).
 // Pour l'instant un seul fichier y est géré : Data.xlsx (Clients, Animaux).
 // ============================================
+// ---------- Connexion Google Sheets / Apps Script (Notes + Agenda uniquement) ----------
+const API_URL = 'https://script.google.com/macros/s/AKfycbyRtJLduBc1CCdhT4hutco7VwyVEJqWitpgV21XWf0HGyf9PgszWywd_cdPZVLWS9D3/exec';
+
+async function apiGet(action, params){
+  params = params || {};
+  const qs = new URLSearchParams({ action, _ts: Date.now(), ...params }).toString();
+  try {
+    const res = await fetch(`${API_URL}?${qs}`);
+    return await res.json();
+  } catch (err){
+    return { error: 'Connexion impossible (' + action + ') : ' + err.message };
+  }
+}
+
+async function apiPost(action, data){
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action, data })
+    });
+    return await res.json();
+  } catch (err){
+    return { error: 'Connexion impossible (' + action + ') : ' + err.message };
+  }
+}
+
 let dossierHandle = null;
 let storeBoubou = null;
 const FEUILLES_STORE_BOUBOU = ['Client', 'Animaux', 'Especes', 'Tailles', 'Races', 'MoyensPaiement', 'Prestations'];
@@ -1130,6 +1212,238 @@ function enregistrerClient(){
 
   fermerModalClient();
   filtrerClients();
+}
+
+// ---------- Notes (Google Sheets / Apps Script) ----------
+function formatDateHeureFR(iso){
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  return d.toLocaleDateString('fr-FR') + ' à ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+let notesCache = [];
+
+async function loadNotes(){
+  const res = await apiGet('getNotes');
+  if (res && res.error){
+    document.getElementById('listeNotes').innerHTML = `<div class="liste-vide" style="color:var(--red);">Erreur : ${res.error}</div>`;
+    return;
+  }
+  notesCache = res || [];
+  renderNotes();
+}
+
+function renderNotes(){
+  const conteneur = document.getElementById('listeNotes');
+  if (!notesCache.length){ conteneur.innerHTML = '<div class="liste-vide">Aucune note</div>'; return; }
+  const triees = [...notesCache].sort((a, b) => new Date(b.Date) - new Date(a.Date));
+  conteneur.innerHTML = triees.map(n => `
+    <div class="param-list-row" style="align-items:flex-start;">
+      <div>
+        <div class="sous-texte">${formatDateHeureFR(n.Date)}</div>
+        <div style="white-space:pre-wrap;margin-top:4px;">${n.Contenu}</div>
+      </div>
+      <span style="flex-shrink:0;">
+        <button class="modif" onclick="modifierNote('${n.ID_Note}')">✏️</button>
+        <button class="suppr" onclick="supprimerNote('${n.ID_Note}')">✕</button>
+      </span>
+    </div>`).join('');
+}
+
+function modifierNote(idNote){
+  const n = notesCache.find(x => x.ID_Note === idNote);
+  if (!n) return;
+  document.getElementById('noteEditId').value = idNote;
+  document.getElementById('noteContenu').value = n.Contenu;
+  document.getElementById('noteFormTitre').textContent = 'Modifier la note';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function enregistrerNote(){
+  const contenu = document.getElementById('noteContenu').value.trim();
+  if (!contenu) return;
+  const editId = document.getElementById('noteEditId').value;
+
+  const res = editId
+    ? await apiPost('updateNote', { ID_Note: editId, Contenu: contenu })
+    : await apiPost('addNote', { Contenu: contenu });
+  if (res && res.error){ alert('Erreur : ' + res.error); return; }
+
+  document.getElementById('noteEditId').value = '';
+  document.getElementById('noteContenu').value = '';
+  document.getElementById('noteFormTitre').textContent = 'Nouvelle note';
+  await loadNotes();
+}
+
+async function supprimerNote(idNote){
+  if (!confirm('Supprimer cette note ?')) return;
+  const res = await apiPost('deleteNote', { ID_Note: idNote });
+  if (res && res.error){ alert('Erreur : ' + res.error); return; }
+  await loadNotes();
+}
+
+// ---------- Agenda / Rendez-vous (Google Sheets / Apps Script) ----------
+let rendezVousCache = [];
+let moisAffichéAgenda = new Date();
+let jourSelectionneAgenda = new Date();
+
+function dateVersCle(d){
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+async function loadAgendaData(){
+  const res = await apiGet('getInitData');
+  if (res && res.error){
+    document.getElementById('listeRdvJour').innerHTML = `<div class="liste-vide" style="color:var(--red);">Erreur : ${res.error}</div>`;
+    return;
+  }
+  rendezVousCache = res.rendezVous || [];
+  renderCalendarAgenda();
+  renderJourAgenda();
+}
+
+function changerMoisAgenda(delta){
+  moisAffichéAgenda = new Date(moisAffichéAgenda.getFullYear(), moisAffichéAgenda.getMonth() + delta, 1);
+  renderCalendarAgenda();
+}
+
+function renderCalendarAgenda(){
+  const MOIS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  const annee = moisAffichéAgenda.getFullYear(), mois = moisAffichéAgenda.getMonth();
+  document.getElementById('agendaMoisLabel').textContent = MOIS[mois] + ' ' + annee;
+
+  const premier = new Date(annee, mois, 1);
+  const decalage = (premier.getDay() + 6) % 7;
+  const nbJours = new Date(annee, mois + 1, 0).getDate();
+  const nbJoursMoisPrecedent = new Date(annee, mois, 0).getDate();
+  const aujourdHui = new Date();
+
+  const joursAvecRdv = new Set(rendezVousCache.map(r => r.Date));
+
+  let html = ['L','M','M','J','V','S','D'].map(j => `<div class="cal-dow">${j}</div>`).join('');
+  for (let i = decalage; i > 0; i--){
+    html += `<div class="cal-day muted">${nbJoursMoisPrecedent - i + 1}</div>`;
+  }
+  for (let j = 1; j <= nbJours; j++){
+    const d = new Date(annee, mois, j);
+    const cle = dateVersCle(d);
+    const estAujourdhui = dateVersCle(d) === dateVersCle(aujourdHui);
+    const estSelectionne = dateVersCle(d) === dateVersCle(jourSelectionneAgenda);
+    const classes = ['cal-day'];
+    if (estSelectionne) classes.push('today');
+    html += `<div class="${classes.join(' ')}" style="cursor:pointer;${estAujourdhui && !estSelectionne ? 'font-weight:800;color:var(--sage-dark);' : ''}" onclick="selectionnerJourAgenda(${annee},${mois},${j})">${j}${joursAvecRdv.has(cle) ? '<div style="width:4px;height:4px;border-radius:50%;background:var(--apricot);margin:1px auto 0;"></div>' : ''}</div>`;
+  }
+  const reste = (7 - ((decalage + nbJours) % 7)) % 7;
+  for (let j = 1; j <= reste; j++){
+    html += `<div class="cal-day muted">${j}</div>`;
+  }
+  document.getElementById('agendaCalGrid').innerHTML = html;
+}
+
+function selectionnerJourAgenda(annee, mois, jour){
+  jourSelectionneAgenda = new Date(annee, mois, jour);
+  renderCalendarAgenda();
+  renderJourAgenda();
+}
+
+function renderJourAgenda(){
+  const cle = dateVersCle(jourSelectionneAgenda);
+  document.getElementById('agendaJourLabel').textContent = 'Rendez-vous du ' + jourSelectionneAgenda.toLocaleDateString('fr-FR');
+
+  const nomClient = id => { const c = storeBoubou.Client.find(x => x.ID_Client === id); return c ? (c.Nom + ' ' + (c.Prenom || '')) : '—'; };
+  const nomAnimal = id => { const a = storeBoubou.Animaux.find(x => x.ID_Animal === id); return a ? a.Nom : ''; };
+
+  const duJour = rendezVousCache.filter(r => r.Date === cle).sort((a, b) => (a.Heure || '').localeCompare(b.Heure || ''));
+  const conteneur = document.getElementById('listeRdvJour');
+  if (!duJour.length){ conteneur.innerHTML = '<div class="liste-vide">Aucun rendez-vous</div>'; return; }
+
+  conteneur.innerHTML = duJour.map(r => `
+    <div class="param-list-row">
+      <div>
+        <div class="nom">${r.Heure || ''} — ${nomClient(r.ID_Client)}${nomAnimal(r.ID_Animal) ? ' (' + nomAnimal(r.ID_Animal) + ')' : ''}</div>
+        <div class="sous-texte">${[r.Prestation, r.Duree ? r.Duree + ' min' : ''].filter(Boolean).join(' · ')}</div>
+      </div>
+      <span>
+        <button class="modif" onclick="ouvrirModalRdv('${r.ID_RendezVous}')">✏️</button>
+        <button class="suppr" onclick="supprimerRdv('${r.ID_RendezVous}')">✕</button>
+      </span>
+    </div>`).join('');
+}
+
+let rdvEnEditionId = null;
+
+function peuplerAnimalRdv(){
+  const idClient = document.getElementById('rdvClient').value;
+  const select = document.getElementById('rdvAnimal');
+  select.innerHTML = '<option value="">—</option>'
+    + storeBoubou.Animaux.filter(a => a.ID_Client === idClient).map(a => `<option value="${a.ID_Animal}">${a.Nom}</option>`).join('');
+}
+
+function ouvrirModalRdv(idRdv){
+  const clientsTries = [...storeBoubou.Client].sort((a, b) => (a.Nom || '').localeCompare(b.Nom || ''));
+  document.getElementById('rdvClient').innerHTML = clientsTries.map(c => `<option value="${c.ID_Client}">${c.Nom} ${c.Prenom || ''}</option>`).join('');
+  document.getElementById('rdvPrestation').innerHTML = '<option value="">—</option>'
+    + storeBoubou.Prestations.map(p => `<option value="${p.Nom}">${p.Nom}</option>`).join('');
+
+  if (idRdv){
+    const r = rendezVousCache.find(x => x.ID_RendezVous === idRdv);
+    if (!r) return;
+    rdvEnEditionId = idRdv;
+    document.getElementById('rdvModalTitre').textContent = 'Modifier le rendez-vous';
+    document.getElementById('rdvDate').value = r.Date || '';
+    document.getElementById('rdvHeure').value = r.Heure || '';
+    document.getElementById('rdvDuree').value = r.Duree || '';
+    document.getElementById('rdvClient').value = r.ID_Client || '';
+    peuplerAnimalRdv();
+    document.getElementById('rdvAnimal').value = r.ID_Animal || '';
+    document.getElementById('rdvPrestation').value = r.Prestation || '';
+    document.getElementById('rdvNotes').value = r.Notes || '';
+  } else {
+    rdvEnEditionId = null;
+    document.getElementById('rdvModalTitre').textContent = 'Nouveau rendez-vous';
+    document.getElementById('rdvDate').value = dateVersCle(jourSelectionneAgenda);
+    document.getElementById('rdvHeure').value = '';
+    document.getElementById('rdvDuree').value = '';
+    peuplerAnimalRdv();
+    document.getElementById('rdvNotes').value = '';
+  }
+  document.getElementById('modalOverlayRdv').classList.add('show');
+}
+
+function fermerModalRdv(){
+  document.getElementById('modalOverlayRdv').classList.remove('show');
+}
+
+async function enregistrerRdv(){
+  const idClient = document.getElementById('rdvClient').value;
+  const date = document.getElementById('rdvDate').value;
+  if (!idClient || !date){ alert('Client et date sont obligatoires.'); return; }
+
+  const champs = {
+    Date: date,
+    Heure: document.getElementById('rdvHeure').value,
+    Duree: document.getElementById('rdvDuree').value,
+    ID_Client: idClient,
+    ID_Animal: document.getElementById('rdvAnimal').value,
+    Prestation: document.getElementById('rdvPrestation').value,
+    Notes: document.getElementById('rdvNotes').value.trim()
+  };
+
+  const res = rdvEnEditionId
+    ? await apiPost('updateRendezVous', { ID_RendezVous: rdvEnEditionId, ...champs })
+    : await apiPost('addRendezVous', champs);
+  if (res && res.error){ alert('Erreur : ' + res.error); return; }
+
+  fermerModalRdv();
+  await loadAgendaData();
+}
+
+async function supprimerRdv(idRdv){
+  if (!confirm('Supprimer ce rendez-vous ?')) return;
+  const res = await apiPost('deleteRendezVous', { ID_RendezVous: idRdv });
+  if (res && res.error){ alert('Erreur : ' + res.error); return; }
+  await loadAgendaData();
 }
 
 async function demarrerBoubou(){
