@@ -735,26 +735,38 @@ setInterval(updateHeaderDate, 30000);
 // ---------- Connexion Google Sheets / Apps Script (Notes + Agenda uniquement) ----------
 const API_URL = 'https://script.google.com/macros/s/AKfycbyRtJLduBc1CCdhT4hutco7VwyVEJqWitpgV21XWf0HGyf9PgszWywd_cdPZVLWS9D3/exec';
 
-async function apiGet(action, params){
+async function apiGet(action, params, tentative){
+  tentative = tentative || 1;
   params = params || {};
   const qs = new URLSearchParams({ action, _ts: Date.now(), ...params }).toString();
   try {
     const res = await fetch(`${API_URL}?${qs}`);
-    return await res.json();
+    const texte = await res.text();
+    return JSON.parse(texte);
   } catch (err){
+    if (tentative < 4){
+      await new Promise(r => setTimeout(r, 600 * tentative));
+      return apiGet(action, params, tentative + 1);
+    }
     return { error: 'Connexion impossible (' + action + ') : ' + err.message };
   }
 }
 
-async function apiPost(action, data){
+async function apiPost(action, data, tentative){
+  tentative = tentative || 1;
   try {
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ action, data })
     });
-    return await res.json();
+    const texte = await res.text();
+    return JSON.parse(texte);
   } catch (err){
+    if (tentative < 4){
+      await new Promise(r => setTimeout(r, 600 * tentative));
+      return apiPost(action, data, tentative + 1);
+    }
     return { error: 'Connexion impossible (' + action + ') : ' + err.message };
   }
 }
@@ -1262,7 +1274,7 @@ function modifierNote(idNote){
 
 async function enregistrerNote(){
   const contenu = document.getElementById('noteContenu').value.trim();
-  if (!contenu) return;
+  if (!contenu){ alert('Écris du texte dans la note avant de l\'ajouter.'); return; }
   const editId = document.getElementById('noteEditId').value;
 
   const res = editId
