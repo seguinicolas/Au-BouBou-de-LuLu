@@ -351,7 +351,11 @@
 
   <!-- ===================== AUTRES PAGES (à construire) ===================== -->
   <div id="viewClients" style="display:none">
-    <div class="clients-page">
+    <div id="clientsNonSupporte" style="display:none" class="placeholder-page">
+      <h2>Clients non disponible ici</h2>
+      <p>Clients et Animaux sont stockés dans un fichier sur cet ordinateur — fonctionnalité disponible uniquement avec Edge ou Chrome sur PC. Depuis un téléphone, utilise Notes et Agenda.</p>
+    </div>
+    <div class="clients-page" id="clientsPageContenu">
       <div class="clients-toolbar">
         <div class="search-wrap">
           <span class="search-icon">🔍</span>
@@ -588,6 +592,11 @@ function showView(view){
   document.getElementById('navMenu').classList.remove('show');
   if (view === 'notes') loadNotes();
   if (view === 'agenda') loadAgendaData();
+  if (view === 'clients'){
+    const supporte = !!window.showDirectoryPicker;
+    document.getElementById('clientsNonSupporte').style.display = supporte ? 'none' : '';
+    document.getElementById('clientsPageContenu').style.display = supporte ? '' : 'none';
+  }
 }
 
 function selectParamTab(btn, tab){
@@ -772,7 +781,6 @@ async function apiPost(action, data, tentative){
 }
 
 let dossierHandle = null;
-let storeBoubou = null;
 const FEUILLES_STORE_BOUBOU = ['Client', 'Animaux', 'Especes', 'Tailles', 'Races', 'MoyensPaiement', 'Prestations'];
 
 const ESPECES_PAR_DEFAUT = ['Chien', 'Chat', 'Lapin', 'Moustique'];
@@ -796,6 +804,9 @@ function storeBoubouVide(){
   FEUILLES_STORE_BOUBOU.forEach(f => { s[f] = []; });
   return s;
 }
+
+let storeBoubou = storeBoubouVide();
+assurerListesParDefaut();
 
 function genererIdLocal(feuille, champId, prefixe){
   const liste = storeBoubou[feuille] || [];
@@ -956,8 +967,9 @@ function masquerEcranAcces(){
 
 async function initialiserAccesDossier(){
   if (!window.showDirectoryPicker){
-    afficherEcranAcces('non-supporte');
-    return false;
+    // Mobile / navigateur non compatible : pas de blocage global, l'app démarre
+    // normalement (Caisse/Notes/Agenda) ; seule la page Clients signalera le souci.
+    return true;
   }
   const handle = await idbGetBoubou('dossierHandleBoubou').catch(() => null);
   if (!handle){
