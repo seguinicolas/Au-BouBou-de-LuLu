@@ -340,10 +340,10 @@
       <aside class="caisse-notes-sidebar">
         <div class="card">
           <div class="header-label">Notes</div>
-          <textarea class="note-textarea" rows="3" placeholder="Écris ta note ici..."></textarea>
-          <button class="btn btn-primary" style="width:100%;margin-top:10px;">+ Ajouter</button>
+          <textarea id="caisseNoteContenu" class="note-textarea" rows="3" placeholder="Écris ta note ici..."></textarea>
+          <button class="btn btn-primary" style="width:100%;margin-top:10px;" onclick="ajouterNoteDepuisCaisse()">+ Ajouter</button>
         </div>
-        <div class="notes-list"></div>
+        <div class="notes-list" id="listeNotesCaisse"></div>
       </aside>
 
     </div>
@@ -556,8 +556,8 @@
 // (pas encore reconnecté/traité dans cette nouvelle base). Passer à true
 // au fur et à mesure que chaque page est reconstruite.
 const MENU_ITEMS = [
-  { id:'caisse',      label:'Caisse',          done:true  },
-  { id:'clients',     label:'Clients',         done:true  },
+  { id:'caisse',      label:'Caisse',          done:true,  requiertFichier:true },
+  { id:'clients',     label:'Clients',         done:true,  requiertFichier:true },
   { id:'notes',       label:'Notes',           done:true  },
   { id:'agenda',      label:'Agenda',          done:true  },
   { id:'ouverture',   label:'Ouverture caisse',done:false },
@@ -568,8 +568,9 @@ const MENU_ITEMS = [
 ];
 
 function renderNavItems(){
+  const supporte = !!window.showDirectoryPicker;
   const c = document.getElementById('navItemsContainer');
-  c.innerHTML = MENU_ITEMS.map(item => `
+  c.innerHTML = MENU_ITEMS.filter(item => supporte || !item.requiertFichier).map(item => `
     <div class="nav-item" onclick="showView('${item.id}')" id="nav-${item.id}">
       <span>${item.label}</span>
       ${item.done ? '' : '<span class="nav-todo">✕</span>'}
@@ -990,6 +991,7 @@ async function suiteDemarrageBoubou(){
   const texte = document.getElementById('dossierNomTexte');
   if (texte && dossierHandle) texte.textContent = dossierHandle.name;
   renderClientsList(storeBoubou.Client);
+  loadNotes();
 }
 
 // ---------- Page Clients ----------
@@ -1259,10 +1261,8 @@ async function loadNotes(){
 }
 
 function renderNotes(){
-  const conteneur = document.getElementById('listeNotes');
-  if (!notesCache.length){ conteneur.innerHTML = '<div class="liste-vide">Aucune note</div>'; return; }
   const triees = [...notesCache].sort((a, b) => new Date(b.Date) - new Date(a.Date));
-  conteneur.innerHTML = triees.map(n => `
+  const html = !triees.length ? '<div class="liste-vide">Aucune note</div>' : triees.map(n => `
     <div class="param-list-row" style="align-items:flex-start;">
       <div>
         <div class="sous-texte">${formatDateHeureFR(n.Date)}</div>
@@ -1273,15 +1273,30 @@ function renderNotes(){
         <button class="suppr" onclick="supprimerNote('${n.ID_Note}')">✕</button>
       </span>
     </div>`).join('');
+  ['listeNotes', 'listeNotesCaisse'].forEach(id => {
+    const conteneur = document.getElementById(id);
+    if (conteneur) conteneur.innerHTML = html;
+  });
 }
 
 function modifierNote(idNote){
   const n = notesCache.find(x => x.ID_Note === idNote);
   if (!n) return;
+  showView('notes');
   document.getElementById('noteEditId').value = idNote;
   document.getElementById('noteContenu').value = n.Contenu;
   document.getElementById('noteFormTitre').textContent = 'Modifier la note';
   window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function ajouterNoteDepuisCaisse(){
+  const champ = document.getElementById('caisseNoteContenu');
+  const contenu = champ.value.trim();
+  if (!contenu) return;
+  const res = await apiPost('addNote', { Contenu: contenu });
+  if (res && res.error){ alert('Erreur : ' + res.error); return; }
+  champ.value = '';
+  await loadNotes();
 }
 
 async function enregistrerNote(){
@@ -1473,6 +1488,7 @@ async function supprimerRdv(idRdv){
 async function demarrerBoubou(){
   const pret = await initialiserAccesDossier();
   if (pret) await suiteDemarrageBoubou();
+  showView(window.showDirectoryPicker ? 'caisse' : 'agenda');
 }
 demarrerBoubou();
 
