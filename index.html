@@ -556,7 +556,7 @@
 // (pas encore reconnecté/traité dans cette nouvelle base). Passer à true
 // au fur et à mesure que chaque page est reconstruite.
 const MENU_ITEMS = [
-  { id:'caisse',      label:'Caisse',          done:true,  requiertFichier:true },
+  { id:'caisse',      label:'Caisse',          done:true  },
   { id:'clients',     label:'Clients',         done:true,  requiertFichier:true },
   { id:'notes',       label:'Notes',           done:true  },
   { id:'agenda',      label:'Agenda',          done:true  },
@@ -1491,7 +1491,7 @@ async function demarrerBoubou(){
   const pret = await initialiserAccesDossier();
   if (pret) await suiteDemarrageBoubou();
   if (!window.showDirectoryPicker) document.getElementById('btnNouveauRdv').style.display = 'none';
-  showView(window.showDirectoryPicker ? 'caisse' : 'agenda');
+  showView('caisse');
 }
 demarrerBoubou();
 
