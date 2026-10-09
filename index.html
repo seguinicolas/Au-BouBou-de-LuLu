@@ -388,7 +388,7 @@
           </div>
           <div class="cal-grid" id="agendaCalGrid"></div>
         </div>
-        <button class="btn btn-primary" style="width:100%;" onclick="ouvrirModalRdv()">+ Nouveau rendez-vous</button>
+        <button id="btnNouveauRdv" class="btn btn-primary" style="width:100%;" onclick="ouvrirModalRdv()">+ Nouveau rendez-vous</button>
       </aside>
       <div class="caisse-main">
         <div class="card">
@@ -1397,16 +1397,18 @@ function renderJourAgenda(){
   const conteneur = document.getElementById('listeRdvJour');
   if (!duJour.length){ conteneur.innerHTML = '<div class="liste-vide">Aucun rendez-vous</div>'; return; }
 
+  const peutModifier = !!window.showDirectoryPicker;
   conteneur.innerHTML = duJour.map(r => `
     <div class="param-list-row">
       <div>
         <div class="nom">${r.Heure || ''} — ${nomClient(r.ID_Client)}${nomAnimal(r.ID_Animal) ? ' (' + nomAnimal(r.ID_Animal) + ')' : ''}</div>
         <div class="sous-texte">${[r.Prestation, r.Duree ? r.Duree + ' min' : ''].filter(Boolean).join(' · ')}</div>
       </div>
+      ${peutModifier ? `
       <span>
         <button class="modif" onclick="ouvrirModalRdv('${r.ID_RendezVous}')">✏️</button>
         <button class="suppr" onclick="supprimerRdv('${r.ID_RendezVous}')">✕</button>
-      </span>
+      </span>` : ''}
     </div>`).join('');
 }
 
@@ -1488,6 +1490,7 @@ async function supprimerRdv(idRdv){
 async function demarrerBoubou(){
   const pret = await initialiserAccesDossier();
   if (pret) await suiteDemarrageBoubou();
+  if (!window.showDirectoryPicker) document.getElementById('btnNouveauRdv').style.display = 'none';
   showView(window.showDirectoryPicker ? 'caisse' : 'agenda');
 }
 demarrerBoubou();
